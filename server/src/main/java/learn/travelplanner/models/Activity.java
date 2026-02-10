@@ -1,7 +1,6 @@
 package learn.travelplanner.models;
 
 import java.time.LocalTime;
-import java.util.Objects;
 
 public class Activity {
     private int activityId;
@@ -101,25 +100,5 @@ public class Activity {
         this.createdBy = createdBy;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
 
-        Activity activity = (Activity) o;
-        return activityId == activity.activityId && orderIndex == activity.orderIndex && Objects.equals(tripDay, activity.tripDay) && Objects.equals(title, activity.title) && Objects.equals(description, activity.description) && Objects.equals(location, activity.location) && Objects.equals(startTime, activity.startTime) && Objects.equals(endTime, activity.endTime) && Objects.equals(createdBy, activity.createdBy);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = activityId;
-        result = 31 * result + Objects.hashCode(tripDay);
-        result = 31 * result + orderIndex;
-        result = 31 * result + Objects.hashCode(title);
-        result = 31 * result + Objects.hashCode(description);
-        result = 31 * result + Objects.hashCode(location);
-        result = 31 * result + Objects.hashCode(startTime);
-        result = 31 * result + Objects.hashCode(endTime);
-        result = 31 * result + Objects.hashCode(createdBy);
-        return result;
-    }
 }

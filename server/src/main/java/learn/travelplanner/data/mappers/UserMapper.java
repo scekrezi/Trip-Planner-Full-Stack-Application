@@ -1,4 +1,4 @@
-package learn.travelplanner.controllers.mappers;
+package learn.travelplanner.data.mappers;
 
 import learn.travelplanner.models.User;
 import org.springframework.jdbc.core.RowMapper;
