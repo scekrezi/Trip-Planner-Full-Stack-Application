@@ -2,7 +2,7 @@ use travel_planner;
 
 insert into `user` (email, password)
 values
-    ('templates@travelplanner.local', 'TEMPLATE_PASSWORD');
+    ('admin@travel.com', 'password');
 
 insert into trip (country, city, start_date, end_date, notes, owner_user_id, is_template) values 
 ('USA', 'Chicago', null, null, 'Template: 3-day Chicago itinerary focusing on food, museums, and walking.', 1, true);
