@@ -4,9 +4,11 @@ import learn.travelplanner.data.mappers.TripMapper;
 import learn.travelplanner.data.mappers.UserMapper;
 import learn.travelplanner.models.Trip;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class TripsJdbcClientRepository implements TripsRepository{
     private final JdbcClient jdbcClient;
 
