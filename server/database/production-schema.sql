@@ -14,7 +14,7 @@ create table trip (
     city varchar(100) not null,
     start_date date null,
     end_date date null,
-    notes text null,
+    notes text not null,
     owner_user_id int not null,
     is_template boolean not null default false,
     constraint fk_trip_owner
@@ -52,7 +52,7 @@ create table activity (
     location varchar(255) null,
     start_time time null,
     end_time time null,
-    created_by_user_id int null,
+    created_by_user_id int not null,
     constraint fk_activity_trip_day
         foreign key (trip_day_id) references trip_day(trip_day_id) on delete cascade,
     constraint fk_activity_created_by
