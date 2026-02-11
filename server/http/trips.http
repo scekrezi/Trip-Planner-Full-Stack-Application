@@ -3,13 +3,17 @@
 
 # View trips
 # ======================================
-### list all trips happy path
-GET {{base_url}} HTTP/1.1
-Authorization: {{auth_header}}
+### list all public trips happy path
+
+GET {{base_url}}/templates HTTP/1.1
 
 ### list all trips sad path
 
 GET {{base_url}} HTTP/1.1
+
+### find trip by id
+
+GET {{base_url}}/1 HTTP/1.1
 
 # Create a trip
 # =======================================
@@ -92,7 +96,7 @@ Authorization: {"id": 2, "email": "b@b.com"}
   "country": "USA",
   "city": "Chicago",
   "startDate": "2026-03-10",
-  "endDate": "2026-03-13",
+  "endDate": "2026-03-13", 
   "notes": "Updated notes"
 }
 
