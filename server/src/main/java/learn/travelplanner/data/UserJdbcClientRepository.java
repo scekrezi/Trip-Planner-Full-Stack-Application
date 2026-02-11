@@ -18,7 +18,7 @@ public class UserJdbcClientRepository implements UserRepository {
     }
 
     @Override
-    public User findByEmail(String email) {
+    public User findByEmail(String email) throws DataAccessException{
         final String sql = """
             select user_id, email, password
             from `user`
@@ -33,7 +33,7 @@ public class UserJdbcClientRepository implements UserRepository {
     }
 
     @Override
-    public User create(User user) {
+    public User create(User user) throws DataAccessException{
         final String sql = """
             insert into `user` (email, password)
             values (:email, :password);

@@ -35,4 +35,14 @@ class TripsJdbcClientRepositoryTest {
         assertTrue(result.get(0).getCity().equals("Chicago"));
     }
 
+    @Test
+    void shouldFindByIdHappyPath() throws DataAccessException {
+        Trip actual = repository.findById(1);
+
+        assertTrue(actual.getCity().equals("Chicago"));
+        assertTrue(actual.getCountry().equals("USA"));
+        assertTrue(actual.getOwner().getUserId() == (1));
+    }
+
+
 }
