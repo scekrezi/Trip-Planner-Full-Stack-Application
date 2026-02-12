@@ -1,6 +1,7 @@
 package learn.travelplanner.models;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 public class Trip {
@@ -12,19 +13,21 @@ public class Trip {
     private String notes;
     private User owner;
     private boolean isTemplate;
+    private List<TripDay> days;
 
     public Trip() {
     }
 
-    public Trip(int tripId, String country, String city, LocalDate startDate, LocalDate endDate, String notes, User owner, boolean isTemplate) {
+    public Trip(User owner, int tripId, String country, String city, LocalDate startDate, LocalDate endDate, String notes, boolean isTemplate, List<TripDay> days) {
+        this.owner = owner;
         this.tripId = tripId;
         this.country = country;
         this.city = city;
         this.startDate = startDate;
         this.endDate = endDate;
         this.notes = notes;
-        this.owner = owner;
         this.isTemplate = isTemplate;
+        this.days = days;
     }
 
     public User getOwner() {
@@ -91,5 +94,11 @@ public class Trip {
         isTemplate = template;
     }
 
+    public List<TripDay> getDays() {
+        return days;
+    }
 
+    public void setDays(List<TripDay> days) {
+        this.days = days;
+    }
 }
