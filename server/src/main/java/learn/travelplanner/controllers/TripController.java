@@ -33,4 +33,14 @@ public class TripController {
         }
         return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
     }
+
+    @GetMapping("/{tripId}/details")
+    public ResponseEntity<Object> findDetails(@PathVariable int tripId) {
+        Result<Trip> result = service.findByIdWithDetails(tripId);
+
+        if(!result.isSuccess()) {
+            return ErrorResponse.build((result));
+        }
+        return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
+    }
 }

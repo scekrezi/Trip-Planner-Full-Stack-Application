@@ -7,6 +7,7 @@ import MyTrips from "./MyTrips";
 import TripsForm from "./TripsForm";
 import DeleteTrip from "./DeleteTrip";
 import { useEffect, useState } from "react"
+import TripDetails from "./TripDetails";
 
 function AppRouter() {
     const [loggedInUser, setLoggedInUser] = useState(JSON.parse(localStorage.getItem("loggedInUser")))
@@ -31,6 +32,10 @@ function AppRouter() {
                 {
                     path: "/trips/templates/list",
                     element: <TemplateTripsList />
+                },
+                {
+                    path: "/trips/:tripId",
+                    element: <TripDetails />
                 },
                 {
                     path: "/trips/myTrips",
