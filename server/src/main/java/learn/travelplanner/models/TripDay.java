@@ -1,21 +1,32 @@
 package learn.travelplanner.models;
 
 import java.time.LocalDate;
-import java.util.Objects;
+import java.util.List;
 
 public class TripDay {
     private int tripDayId;
     private LocalDate dayDate;
     private String dayNotes;
     private Trip trip;
+    private List<Activity> activities;
+
 
     public TripDay() {
     }
 
-    public TripDay(int tripDayId, LocalDate dayDate, String dayNotes, Trip trip) {
-        this.tripDayId = tripDayId;
-        this.dayDate = dayDate;
+    public TripDay(List<Activity> activities, Trip trip, String dayNotes, LocalDate dayDate, int tripDayId) {
+        this.activities = activities;
+        this.trip = trip;
         this.dayNotes = dayNotes;
+        this.dayDate = dayDate;
+        this.tripDayId = tripDayId;
+    }
+
+    public Trip getTrip() {
+        return trip;
+    }
+
+    public void setTrip(Trip trip) {
         this.trip = trip;
     }
 
@@ -43,12 +54,11 @@ public class TripDay {
         this.dayNotes = dayNotes;
     }
 
-    public Trip getTrip() {
-        return trip;
+    public List<Activity> getActivities() {
+        return activities;
     }
 
-    public void setTrip(Trip trip) {
-        this.trip = trip;
+    public void setActivities(List<Activity> activities) {
+        this.activities = activities;
     }
-
 }
