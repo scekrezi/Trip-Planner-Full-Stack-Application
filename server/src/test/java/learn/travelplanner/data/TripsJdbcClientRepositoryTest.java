@@ -1,6 +1,7 @@
 package learn.travelplanner.data;
 
 import learn.travelplanner.models.Trip;
+import learn.travelplanner.models.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,6 +20,9 @@ class TripsJdbcClientRepositoryTest {
 
     @Autowired
     private TripsJdbcClientRepository repository;
+
+    @Autowired
+    private UserJdbcClientRepository userRepository;
 
     @Autowired
     private JdbcClient jdbcClient;
@@ -42,6 +47,31 @@ class TripsJdbcClientRepositoryTest {
         assertTrue(actual.getCity().equals("Chicago"));
         assertTrue(actual.getCountry().equals("USA"));
         assertTrue(actual.getOwner().getUserId() == (1));
+    }
+
+    @Test
+    void shouldCreateTripWithAllFields() {
+
+        User owner = userRepository.findByEmail("a@test.com");
+
+        Trip trip = new Trip();
+        trip.setCountry("Japan");
+        trip.setCity("Tokyo");
+        trip.setStartDate(LocalDate.of(2026, 3, 10));
+        trip.setEndDate(LocalDate.of(2026, 3, 12));
+        trip.setNotes("Test notes");
+        trip.setOwner(owner);
+        trip.setTemplate(false);
+
+        Trip actual = repository.create(trip);
+
+
+        assertNotNull(actual);
+        assertTrue(actual.getTripId() > 0);
+
+
+        assertTrue(actual.getCountry().equals("Japan"));
+
     }
 
 
