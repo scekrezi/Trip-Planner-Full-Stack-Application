@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ActivityRepository {
     List<Activity> findByTripId(int tripId) throws DataAccessException;
+    Activity create(Activity activity) throws DataAccessException;
 }
