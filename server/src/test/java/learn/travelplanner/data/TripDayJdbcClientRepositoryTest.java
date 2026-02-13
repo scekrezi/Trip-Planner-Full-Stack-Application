@@ -21,6 +21,9 @@ class TripDayJdbcClientRepositoryTest {
     private TripDayJdbcClientRepository repository;
 
     @Autowired
+    private TripsJdbcClientRepository tripRepository;
+
+    @Autowired
     private JdbcClient jdbcClient;
 
     @BeforeEach
@@ -34,6 +37,25 @@ class TripDayJdbcClientRepositoryTest {
 
         assertTrue(actual.size() == 3);
         assertTrue(actual.get(0).getDayNotes().equals("Day 1: Downtown"));
+    }
+
+    @Test
+    void shouldCreateTripDay() {
+
+        Trip trip = tripRepository.findById(1);
+
+        TripDay day = new TripDay();
+        day.setDayDate(LocalDate.of(2027, 3, 10));
+        day.setDayNotes("Arrival day");
+        day.setTrip(trip);
+
+        TripDay actual = repository.create(day);
+
+        assertNotNull(actual);
+        assertTrue(actual.getTripDayId() > 0);
+
+
+        assertTrue(actual.getDayNotes().equals("Arrival day"));
     }
 
 }
