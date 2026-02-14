@@ -72,9 +72,9 @@ class ActivityJdbcClientRepositoryTest {
         Activity activity = new Activity();
         activity.setTripDay(tripDay.get(0));
         activity.setOrderIndex(3);
-        activity.setTitle("Senso-ji Temple");
+        activity.setTitle("Temple");
         activity.setDescription("Morning visit");
-        activity.setLocation("Asakusa");
+        activity.setLocation("LocationTest");
         activity.setStartTime(LocalTime.of(9, 0));
         activity.setEndTime(LocalTime.of(11, 0));
         activity.setCreatedBy(owner);
@@ -85,7 +85,7 @@ class ActivityJdbcClientRepositoryTest {
         assertTrue(actual.getActivityId() > 0);
 
 
-        assertEquals("Senso-ji Temple", actual.getTitle());
+        assertEquals("Temple", actual.getTitle());
         assertEquals(3, actual.getOrderIndex());
         assertEquals(trip.getTripId(), tripDay.get(0).getTrip().getTripId());
         assertEquals(owner.getUserId(), actual.getCreatedBy().getUserId());

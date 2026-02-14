@@ -14,6 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataAccessException;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -125,19 +127,75 @@ class TripServiceTest {
         TripDay payloadDay1 = payload.getDays().get(0);
         TripDay payloadDay2 = payload.getDays().get(1);
 
-        // Day1 should have 2 activities
         assertNotNull(payloadDay1.getActivities());
         assertEquals(2, payloadDay1.getActivities().size());
         assertEquals(100, payloadDay1.getActivities().get(0).getActivityId());
         assertEquals(101, payloadDay1.getActivities().get(1).getActivityId());
 
-        // Day2 should have 1 activity
         assertNotNull(payloadDay2.getActivities());
         assertEquals(1, payloadDay2.getActivities().size());
         assertEquals(102, payloadDay2.getActivities().get(0).getActivityId());
 
     }
 
+    @Test
+    void shouldCreateTripWithDaysAndActivities() {
 
+        User owner = new User(1, "TEST", "password");
+
+        assertNotNull(owner);
+        assertTrue(owner.getUserId() > 0);
+
+        Trip trip = new Trip();
+        trip.setTripId(1);
+        trip.setCountry("Japan");
+        trip.setCity("Tokyo");
+        trip.setStartDate(LocalDate.of(2026, 3, 10));
+        trip.setEndDate(LocalDate.of(2026, 3, 12));
+        trip.setNotes("Service test trip");
+        trip.setOwner(owner);
+        trip.setTemplate(false);
+
+        TripDay day1 = new TripDay();
+        day1.setTripDayId(1);
+        day1.setDayDate(LocalDate.of(2026, 3, 10));
+        day1.setDayNotes("Day One Notes");
+
+        Activity a1 = new Activity();
+        a1.setActivityId(1);
+        a1.setTitle("Check-in");
+        a1.setDescription(null);
+        a1.setLocation("Hotel");
+        a1.setStartTime(LocalTime.of(15, 0));
+        a1.setEndTime(LocalTime.of(16, 0));
+
+        Activity a2 = new Activity();
+        a2.setActivityId(2);
+        a2.setTitle("Dinner");
+        a2.setDescription(null);
+        a2.setLocation("Shinjuku");
+        a2.setStartTime(LocalTime.of(19, 0));
+        a2.setEndTime(LocalTime.of(21, 0));
+
+        day1.setActivities(List.of(a1, a2));
+
+        TripDay day2 = new TripDay();
+        day2.setTripDayId(2);
+        day2.setDayDate(LocalDate.of(2026, 3, 11));
+        day2.setDayNotes("Explore");
+        day2.setActivities(List.of());
+
+        trip.setDays(List.of(day1, day2));
+
+        when(repository.create(org.mockito.ArgumentMatchers.any(Trip.class))).thenReturn(trip);
+        when(tripDayRepository.create(org.mockito.ArgumentMatchers.any(TripDay.class))).thenReturn(day1, day2);
+        when(activityRepository.create(org.mockito.ArgumentMatchers.any(Activity.class))).thenReturn(a1, a2);
+
+        Trip saved = service.createTripWithDetails(trip);
+
+        assertNotNull(saved);
+        assertTrue(saved.getTripId() > 0);
+
+    }
 
 }
