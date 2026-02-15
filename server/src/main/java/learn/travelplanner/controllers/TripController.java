@@ -86,4 +86,27 @@ public class TripController {
             }
         }
     }
+
+    @GetMapping("/mine/upcoming")
+    public ResponseEntity<?> findMyUpcoming(@RequestHeader Map<String, String> headers) throws JsonProcessingException {
+        User user = getUserFromHeaders(headers);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        List<Trip> trips = service.findUpcomingByOwnerId(user.getUserId());
+        return new ResponseEntity<>(trips, HttpStatus.OK);
+    }
+
+    @GetMapping("/mine/past")
+    public ResponseEntity<?> findMyPast(@RequestHeader Map<String, String> headers) throws JsonProcessingException {
+        User user = getUserFromHeaders(headers);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        List<Trip> trips = service.findPastByOwnerId(user.getUserId());
+        return new ResponseEntity<>(trips, HttpStatus.OK);
+    }
+
 }

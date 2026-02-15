@@ -10,6 +10,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -72,6 +73,14 @@ class TripsJdbcClientRepositoryTest {
 
         assertTrue(actual.getCountry().equals("Japan"));
 
+    }
+    @Test
+    void shouldFindByOwnerIdHappyPath() throws DataAccessException {
+        List<Trip> actual = repository.findByOwnerId(1);
+
+        assertTrue(actual.get(0).getCity().equals("Chicago"));
+        assertTrue(actual.get(0).getCountry().equals("USA"));
+        assertTrue(actual.get(0).getOwner().getUserId() == (1));
     }
 
 

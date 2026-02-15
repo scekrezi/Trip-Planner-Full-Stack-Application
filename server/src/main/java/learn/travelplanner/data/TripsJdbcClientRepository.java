@@ -75,4 +75,23 @@ public class TripsJdbcClientRepository implements TripsRepository{
 
 
     }
+
+    @Override
+    public List<Trip> findByOwnerId(int ownerId) {
+
+        final String sql = """
+            SELECT trip_id, country, city, start_date, end_date, notes, owner_user_id, is_template
+            FROM trip
+            WHERE owner_user_id = :owner_user_id
+              AND is_template = false
+            ORDER BY start_date DESC
+            """;
+
+        return jdbcClient.sql(sql)
+                .param("owner_user_id", ownerId)
+                .query(new TripMapper())
+                .list();
+    }
+
+
 }

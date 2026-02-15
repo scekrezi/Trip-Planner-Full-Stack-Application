@@ -9,6 +9,7 @@ import learn.travelplanner.models.TripDay;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -132,6 +133,43 @@ public class TripService {
         }
 
         return savedTrip;
+    }
+
+    public List<Trip> findByOwnerId(int ownerId) {
+        return repository.findByOwnerId(ownerId);
+    }
+
+
+    public List<Trip> findUpcomingByOwnerId(int ownerId) {
+
+        List<Trip> all = findByOwnerId(ownerId);
+        List<Trip> upcoming = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+
+        for (Trip t : all) {
+            if (t.getEndDate() == null || !t.getEndDate().isBefore(today)) {
+                upcoming.add(t);
+            }
+        }
+
+        return upcoming;
+    }
+
+    public List<Trip> findPastByOwnerId(int ownerId) {
+
+        List<Trip> all = findByOwnerId(ownerId);
+        List<Trip> past = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+
+        for (Trip t : all) {
+            if (t.getEndDate() != null && t.getEndDate().isBefore(today)) {
+                past.add(t);
+            }
+        }
+
+        return past;
     }
 
 }

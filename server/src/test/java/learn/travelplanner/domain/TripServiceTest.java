@@ -197,5 +197,62 @@ class TripServiceTest {
         assertTrue(saved.getTripId() > 0);
 
     }
+    @Test
+    void shouldReturnUpcomingTrips() {
+        LocalDate today = LocalDate.now();
+
+        Trip future = new Trip();
+        future.setTripId(1);
+        future.setEndDate(today.plusDays(2));
+
+        Trip past = new Trip();
+        past.setTripId(2);
+        past.setEndDate(today.minusDays(1));
+
+        when(repository.findByOwnerId(1)).thenReturn(List.of(future, past));
+
+        List<Trip> result = service.findUpcomingByOwnerId(1);
+
+        assertEquals(1, result.size());
+        assertEquals(1, result.get(0).getTripId());
+    }
+
+    @Test
+    void shouldReturnPastTrips() {
+        LocalDate today = LocalDate.now();
+
+        Trip past = new Trip();
+        past.setTripId(10);
+        past.setEndDate(today.minusDays(3));
+
+        Trip future = new Trip();
+        future.setTripId(20);
+        future.setEndDate(today.plusDays(3));
+
+        when(repository.findByOwnerId(1)).thenReturn(List.of(past, future));
+
+        List<Trip> result = service.findPastByOwnerId(1);
+
+        assertEquals(1, result.size());
+        assertEquals(10, result.get(0).getTripId());
+    }
+
+    @Test
+    void shouldTreatNullEndDateAsUpcoming() {
+        Trip ongoing = new Trip();
+        ongoing.setTripId(5);
+        ongoing.setEndDate(null);
+
+        when(repository.findByOwnerId(1)).thenReturn(List.of(ongoing));
+
+        List<Trip> result = service.findUpcomingByOwnerId(1);
+
+        assertEquals(1, result.size());
+    }
+
+
+
+
+
 
 }
