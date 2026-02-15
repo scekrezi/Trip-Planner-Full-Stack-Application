@@ -85,6 +85,15 @@ public class TripService {
         if (trip.getNotes() == null) {
             trip.setNotes("");
         }
+        if (trip.getCountry() == null || trip.getCountry().isBlank()) {
+            throw new IllegalArgumentException("Country is required.");
+        }
+
+        if (trip.getCity() == null || trip.getCity().isBlank()) {
+            throw new IllegalArgumentException("City is required.");
+        }
+
+
 
         Trip savedTrip = repository.create(trip);
         if (savedTrip == null) {

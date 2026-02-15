@@ -1,5 +1,7 @@
 package learn.travelplanner.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -7,6 +9,7 @@ public class TripDay {
     private int tripDayId;
     private LocalDate dayDate;
     private String dayNotes;
+    @JsonIgnoreProperties({"days"})
     private Trip trip;
     private List<Activity> activities;
 
