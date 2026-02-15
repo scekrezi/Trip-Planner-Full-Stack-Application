@@ -1,9 +1,12 @@
 package learn.travelplanner.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.time.LocalTime;
 
 public class Activity {
     private int activityId;
+    @JsonIgnoreProperties({"trip", "activities"})
     private TripDay tripDay;
     private int orderIndex;
     private String title;

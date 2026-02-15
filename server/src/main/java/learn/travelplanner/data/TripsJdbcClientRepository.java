@@ -5,6 +5,8 @@ import learn.travelplanner.data.mappers.UserMapper;
 import learn.travelplanner.models.Trip;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -43,5 +45,34 @@ public class TripsJdbcClientRepository implements TripsRepository{
                 .param(tripId)
                 .query(new TripMapper())
                 .optional().orElse(null);
+    }
+
+    @Override
+    public Trip create(Trip trip) throws DataAccessException {
+        final String sql = """
+                insert into trip (country, city, start_date, end_date, notes, owner_user_id, is_template)
+                values (:country, :city, :start_date, :end_date, :notes, :owner_user_id, :is_template)
+                """;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        int rows =  jdbcClient.sql(sql)
+                .param("country", trip.getCountry())
+                .param("city", trip.getCity())
+                .param("start_date", trip.getStartDate())
+                .param("end_date", trip.getEndDate())
+                .param("notes", trip.getNotes())
+                .param("owner_user_id", trip.getOwner().getUserId())
+                .param("is_template", trip.isTemplate())
+                .update(keyHolder);
+
+        if (rows <= 0) {
+            return null;
+        }
+
+        trip.setTripId(keyHolder.getKey().intValue());
+        return trip;
+
+
+
     }
 }

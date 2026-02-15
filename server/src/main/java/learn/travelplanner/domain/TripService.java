@@ -75,6 +75,63 @@ public class TripService {
         return result;
     }
 
+    public Trip createTripWithDetails(Trip trip) {
+        if (trip == null) {
+            throw new IllegalArgumentException("Trip cannot null");
+        }
+        if (trip.getOwner() == null || trip.getOwner().getUserId() <= 0) {
+            throw new IllegalArgumentException("Trip owner is required");
+        }
+        if (trip.getNotes() == null) {
+            trip.setNotes("");
+        }
+        if (trip.getCountry() == null || trip.getCountry().isBlank()) {
+            throw new IllegalArgumentException("Country is required.");
+        }
 
+        if (trip.getCity() == null || trip.getCity().isBlank()) {
+            throw new IllegalArgumentException("City is required.");
+        }
+
+
+
+        Trip savedTrip = repository.create(trip);
+        if (savedTrip == null) {
+            throw new IllegalStateException("Unable to create trip.");
+        }
+
+        if (trip.getDays() != null) {
+
+            for (TripDay day : trip.getDays()) {
+
+                day.setTrip(savedTrip);
+
+                TripDay savedDay = tripDayRepository.create(day);
+                if (savedDay == null) {
+                    throw new IllegalStateException("Unable to create trip day.");
+                }
+
+                if (day.getActivities() != null) {
+
+                    int orderIndex = 1;
+
+                    for (Activity activity : day.getActivities()) {
+
+                        activity.setTripDay(savedDay);
+                        activity.setCreatedBy(savedTrip.getOwner());
+
+                        activity.setOrderIndex(orderIndex++);
+
+                        Activity savedActivity = activityRepository.create(activity);
+                        if (savedActivity == null) {
+                            throw new IllegalStateException("Unable to create activity.");
+                        }
+                    }
+                }
+            }
+        }
+
+        return savedTrip;
+    }
 
 }

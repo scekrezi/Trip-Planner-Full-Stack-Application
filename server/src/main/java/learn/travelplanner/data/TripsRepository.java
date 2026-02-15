@@ -9,4 +9,8 @@ public interface TripsRepository {
     List<Trip> findTemplates() throws DataAccessException;
 
     Trip findById(int tripId) throws DataAccessException;
+
+    Trip create(Trip Trip);
+
 }
+
