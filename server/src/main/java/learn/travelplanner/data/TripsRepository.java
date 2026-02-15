@@ -11,5 +11,6 @@ public interface TripsRepository {
     Trip findById(int tripId) throws DataAccessException;
 
     Trip create(Trip Trip);
+
 }
 
