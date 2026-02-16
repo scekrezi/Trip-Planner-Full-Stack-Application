@@ -35,7 +35,7 @@ function AppRouter() {
                 },
                 {
                     path: "/trips/:tripId",
-                    element: <TripDetails />
+                    element: <TripDetails loggedInUser={loggedInUser} />
                 },
                 {
                     path: "/trips/myTrips",
@@ -50,9 +50,10 @@ function AppRouter() {
                     element: loggedInUser ? <TripsForm loggedInUser={loggedInUser} setLoggedInUser={setLoggedInUser} /> : <Navigate to="/users/login" />
                 },
                 {
-                    path: "/trips/delete/:tripId",
-                    element: loggedInUser ? <DeleteTrip loggedInUser={loggedInUser} setLoggedInUser={setLoggedInUser} /> : <Navigate to="/users/login" />
+                    path: "/trips/:tripId/delete",
+                    element: loggedInUser ? <DeleteTrip loggedInUser={loggedInUser} /> : <Navigate to="/users/login" />
                 },
+
                 {
                     path: "*",
                     element: <div>Not Found</div>
