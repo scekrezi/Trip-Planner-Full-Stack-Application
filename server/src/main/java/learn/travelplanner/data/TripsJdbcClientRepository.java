@@ -77,7 +77,7 @@ public class TripsJdbcClientRepository implements TripsRepository{
     }
 
     @Override
-    public List<Trip> findByOwnerId(int ownerId) {
+    public List<Trip> findByOwnerId(int ownerId) throws DataAccessException{
 
         final String sql = """
             SELECT trip_id, country, city, start_date, end_date, notes, owner_user_id, is_template
@@ -92,6 +92,25 @@ public class TripsJdbcClientRepository implements TripsRepository{
                 .query(new TripMapper())
                 .list();
     }
+
+    @Override
+    public boolean deleteById(int tripId, int ownerUserId) throws DataAccessException {
+
+        final String sql = """
+            delete from trip
+            where trip_id = :trip_id
+              and owner_user_id = :owner_user_id
+              and is_template = false
+            """;
+
+        int rows = jdbcClient.sql(sql)
+                .param("trip_id", tripId)
+                .param("owner_user_id", ownerUserId)
+                .update();
+
+        return rows > 0;
+    }
+
 
 
 }
