@@ -109,4 +109,32 @@ public class TripController {
         return new ResponseEntity<>(trips, HttpStatus.OK);
     }
 
+    @DeleteMapping("/{tripId}")
+    public ResponseEntity<Object> delete(@PathVariable int tripId,
+                                         @RequestHeader Map<String, String> headers)
+            throws JsonProcessingException {
+
+        User user = getUserFromHeaders(headers);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        Result<Trip> lookupResult = service.findById(tripId);
+        if (!lookupResult.isSuccess()) {
+            return ErrorResponse.build(lookupResult);
+        }
+
+        Trip trip = lookupResult.getPayload();
+        if (trip.getOwner() == null || trip.getOwner().getUserId() != user.getUserId()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+        Result<Trip> result = service.deleteById(tripId, user.getUserId());
+        if (!result.isSuccess()) {
+            return ErrorResponse.build(result);
+        }
+
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
 }

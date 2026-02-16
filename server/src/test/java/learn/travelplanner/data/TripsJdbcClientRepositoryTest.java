@@ -51,7 +51,7 @@ class TripsJdbcClientRepositoryTest {
     }
 
     @Test
-    void shouldCreateTripWithAllFields() {
+    void shouldCreateTripWithAllFields() throws DataAccessException{
 
         User owner = userRepository.findByEmail("a@test.com");
 
@@ -81,6 +81,12 @@ class TripsJdbcClientRepositoryTest {
         assertTrue(actual.get(0).getCity().equals("Chicago"));
         assertTrue(actual.get(0).getCountry().equals("USA"));
         assertTrue(actual.get(0).getOwner().getUserId() == (1));
+    }
+
+    @Test
+    void shouldDeleteById() throws DataAccessException {
+        assertTrue(repository.deleteById(2, 1));
+        assertNull(repository.findById(2));
     }
 
 

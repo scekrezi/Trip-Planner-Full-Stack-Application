@@ -5,7 +5,8 @@ values
     ('admin@travel.com', 'password');
 
 insert into trip (country, city, start_date, end_date, notes, owner_user_id, is_template) values 
-('USA', 'Chicago', null, null, 'Template: 3-day Chicago itinerary focusing on food, museums, and walking.', 1, true);
+('USA', 'Chicago', null, null, 'Template: 3-day Chicago itinerary focusing on food, museums, and walking.', 1, true),
+('USA', 'Chicago', '2026-03-01', '2026-03-05', 'Test trip', 1, 0);
 
 insert into trip_day (day_date, day_notes, trip_id) values
     ('2099-01-01', 'Day 1: Downtown + Riverwalk', 1),

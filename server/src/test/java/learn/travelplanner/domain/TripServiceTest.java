@@ -250,6 +250,26 @@ class TripServiceTest {
         assertEquals(1, result.size());
     }
 
+    @Test
+    void shouldDeleteTripHappyPath() {
+        when(repository.deleteById(1, 1)).thenReturn(true);
+
+        Result<Trip> result = service.deleteById(1, 1);
+
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
+    void shouldFailWhenDeleteReturnsFalse() {
+        when(repository.deleteById(1, 1)).thenReturn(false);
+
+        Result<Trip> result = service.deleteById(1, 1);
+
+        assertFalse(result.isSuccess());
+        assertEquals(ResultType.NOT_FOUND, result.getResultType());
+    }
+
+
 
 
 

@@ -172,4 +172,25 @@ public class TripService {
         return past;
     }
 
+    public Result<Trip> deleteById(int tripId, int ownerUserId) {
+        Result<Trip> result = new Result<>();
+
+        if (tripId <= 0) {
+            result.addErrorMessage("Trip id must be greater than 0.", ResultType.INVALID);
+            return result;
+        }
+
+        if (ownerUserId <= 0) {
+            result.addErrorMessage("User id must be greater than 0.", ResultType.INVALID);
+            return result;
+        }
+
+        boolean deleted = repository.deleteById(tripId, ownerUserId);
+
+        if (!deleted) {
+            result.addErrorMessage("Trip not found or you are not the owner.", ResultType.NOT_FOUND);
+        }
+
+        return result;
+    }
 }
