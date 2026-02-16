@@ -205,17 +205,14 @@ Authorization: {{auth_header}}
 
 ### DELETE
 
-### delete trip happy path (204)
-DELETE {{base_url}}/1 HTTP/1.1
+### delete trip happy path
+DELETE http://localhost:8080/api/trips/2
 Authorization: {{auth_header}}
 
-### delete trip no auth (401/403)
-DELETE {{base_url}}/1 HTTP/1.1\
+### delete trip no auth
+DELETE http://localhost:8080/api/trips/1
 
-### delete trip wrong owner (403)
-DELETE {{base_url}}/1 HTTP/1.1
-Authorization: {"id": 2, "email": "a@a.com"}
-
-### delete trip not found (404)
-DELETE {{base_url}}/9999 HTTP/1.1
+### delete trip not found
+DELETE http://localhost:8080/api/trips/999
 Authorization: {{auth_header}}
+
