@@ -17,9 +17,8 @@ export default function TripDetails({ loggedInUser }) {
   const [addMemberError, setAddMemberError] = useState(null);
   const [addMemberSuccess, setAddMemberSuccess] = useState(null);
 
-  const isLoggedIn = !!loggedInUser?.diyJwt;
+const isLoggedIn = !!(loggedInUser?.diyJwt);
   const loggedInUserId = loggedInUser?.id ?? loggedInUser?.userId;
-
 
   function buildHeaders() {
     const headers = { Accept: "application/json" };
@@ -31,7 +30,9 @@ export default function TripDetails({ loggedInUser }) {
     if (!loggedInUser?.diyJwt) return;
 
     setMembersError(null);
-    fetch(`http://localhost:8080/api/trips/${tripId}/members`, { headers: buildHeaders() })
+    fetch(`http://localhost:8080/api/trips/${tripId}/members`, {
+      headers: buildHeaders(),
+    })
       .then(async (res) => {
         if (res.status === 401) return [];
         if (res.status === 403) return [];
@@ -58,7 +59,7 @@ export default function TripDetails({ loggedInUser }) {
 
     const body = {
       user: { email },
-      role: newMemberRole, // VIEWER or EDITOR
+      role: newMemberRole,
     };
 
     const headers = {
@@ -89,6 +90,33 @@ export default function TripDetails({ loggedInUser }) {
   }
 
   
+  function handleUseTemplate() {
+    if (!trip) return;
+
+    
+    const templateTrip = {
+      country: trip.country ?? "",
+      city: trip.city ?? "",
+      notes: trip.notes ?? "",
+      startDate: "",
+      endDate: "",   
+      days: (trip.days ?? []).map((d) => ({
+        dayDate: "",
+        dayNotes: d.dayNotes ?? "",
+        activities: (d.activities ?? []).map((a) => ({
+          title: a.title ?? "",
+          description: a.description ?? null,
+          location: a.location ?? null,
+          startTime: null,
+          endTime: null,
+        })),
+      })),
+    };
+
+ 
+    navigate("/trips/add", { state: { templateTrip } });
+  }
+
   useEffect(() => {
     setError(null);
     setTrip(null);
@@ -98,7 +126,9 @@ export default function TripDetails({ loggedInUser }) {
     setAddMemberError(null);
     setAddMemberSuccess(null);
 
-    fetch(`http://localhost:8080/api/trips/${tripId}/details`, { headers: buildHeaders() })
+    fetch(`http://localhost:8080/api/trips/${tripId}/details`, {
+      headers: buildHeaders(),
+    })
       .then(async (res) => {
         if (res.status === 404) {
           navigate("/notFound");
@@ -114,7 +144,6 @@ export default function TripDetails({ loggedInUser }) {
         if (!data) return;
         setTrip(data);
 
-        
         if (loggedInUser?.diyJwt) {
           refreshMembers();
         }
@@ -126,11 +155,11 @@ export default function TripDetails({ loggedInUser }) {
   if (error) return <div className="alert alert-danger">{error}</div>;
   if (!trip) return <div>Loading trip...</div>;
 
-  const isTemplate = !!trip.isTemplate;
+ const isTemplate = !!(trip?.isTemplate ?? trip?.template ?? trip?.is_template);
 
   const ownerId = trip?.owner?.userId ?? trip?.owner?.id;
-  const isOwner = isLoggedIn && ownerId && loggedInUserId && ownerId === loggedInUserId;
-
+  const isOwner =
+    isLoggedIn && ownerId && loggedInUserId && ownerId === loggedInUserId;
 
   const canManage = isLoggedIn && !isTemplate && isOwner;
 
@@ -149,8 +178,19 @@ export default function TripDetails({ loggedInUser }) {
           )}
 
           {isTemplate && (
-            <div className="mt-2">
+            <div className="mt-2 d-flex gap-2 align-items-center flex-wrap">
               <span className="badge text-bg-secondary">Template</span>
+
+              {/* */}
+              {isLoggedIn && (
+                <button
+                  className="btn btn-sm btn-primary"
+                  type="button"
+                  onClick={handleUseTemplate}
+                >
+                  Use this template
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -213,12 +253,18 @@ export default function TripDetails({ loggedInUser }) {
       ) : (
         <div className="card shadow-sm rounded-3 mb-3">
           <div className="card-body">
-            {membersError && <div className="alert alert-danger">{membersError}</div>}
+            {membersError && (
+              <div className="alert alert-danger">{membersError}</div>
+            )}
 
             {showAddMember && canManage && (
               <form onSubmit={handleAddMember} className="mb-3">
-                {addMemberError && <div className="alert alert-danger">{addMemberError}</div>}
-                {addMemberSuccess && <div className="alert alert-success">{addMemberSuccess}</div>}
+                {addMemberError && (
+                  <div className="alert alert-danger">{addMemberError}</div>
+                )}
+                {addMemberSuccess && (
+                  <div className="alert alert-success">{addMemberSuccess}</div>
+                )}
 
                 <div className="row g-2 align-items-end">
                   <div className="col-md-7">
@@ -251,13 +297,16 @@ export default function TripDetails({ loggedInUser }) {
                 </div>
 
                 <div className="form-text mt-2">
-                  Owner can add collaborators as <strong>VIEWER</strong> or <strong>EDITOR</strong>.
+                  Owner can add collaborators as <strong>VIEWER</strong> or{" "}
+                  <strong>EDITOR</strong>.
                 </div>
               </form>
             )}
 
             {!members || members.length === 0 ? (
-              <div className="text-muted">No collaborators found (or you don’t have access).</div>
+              <div className="text-muted">
+                No collaborators found (or you don’t have access).
+              </div>
             ) : (
               <ul className="list-group">
                 {members.map((m, idx) => (
@@ -273,9 +322,7 @@ export default function TripDetails({ loggedInUser }) {
                           ? `User #${m.user?.userId ?? m.user?.id}`
                           : "Unknown user"}
                       </div>
-                      <div className="text-muted small">
-                        Role: {m.role ?? "?"}
-                      </div>
+                      <div className="text-muted small">Role: {m.role ?? "?"}</div>
                     </div>
                     <span className="badge text-bg-secondary">{m.role ?? "?"}</span>
                   </li>
@@ -297,7 +344,9 @@ export default function TripDetails({ loggedInUser }) {
           <div key={day.tripDayId} className="card shadow-sm rounded-3 mb-3">
             <div className="card-body">
               <h5 className="card-title mb-1">{day.dayDate}</h5>
-              {day.dayNotes && <p className="card-text text-muted mb-3">{day.dayNotes}</p>}
+              {day.dayNotes && (
+                <p className="card-text text-muted mb-3">{day.dayNotes}</p>
+              )}
 
               <h6 className="mb-2">Activities</h6>
 
@@ -311,7 +360,9 @@ export default function TripDetails({ loggedInUser }) {
                         <div>
                           <div className="fw-semibold">{a.title}</div>
                           {a.location && <div>{a.location}</div>}
-                          {a.description && <div className="text-muted">{a.description}</div>}
+                          {a.description && (
+                            <div className="text-muted">{a.description}</div>
+                          )}
                         </div>
 
                         <div className="text-muted text-nowrap">

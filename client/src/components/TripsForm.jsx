@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 const INITIAL_TRIP = {
   country: "",
@@ -26,9 +26,44 @@ const emptyActivity = () => ({
   endTime: ""
 });
 
+
+function addDays(dateString, offset) {
+  if (!dateString) return "";
+  const d = new Date(dateString + "T00:00:00");
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
+function buildTripFromTemplate(templateTrip) {
+  
+  return {
+    country: templateTrip?.country ?? "",
+    city: templateTrip?.city ?? "",
+    startDate: "",
+    endDate: "",
+    notes: templateTrip?.notes ?? "",
+    days: (templateTrip?.days ?? []).map((d) => ({
+      tripDayId: 0,
+      dayDate: "",
+      dayNotes: d?.dayNotes ?? "",
+      activities: (d?.activities ?? []).map((a) => ({
+        activityId: 0,
+        title: a?.title ?? "",
+        description: a?.description ?? "",
+        location: a?.location ?? "",
+        startTime: "", 
+        endTime: ""
+      }))
+    }))
+  };
+}
+
 export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   const navigate = useNavigate();
   const { tripId } = useParams();
+  const location = useLocation();
+
+  const templateTrip = useMemo(() => location.state?.templateTrip, [location.state]);
 
   const [trip, setTrip] = useState(INITIAL_TRIP);
   const [errors, setErrors] = useState([]);
@@ -39,19 +74,29 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
 
   useEffect(() => {
-    if (tripId === undefined) {
+
+    if (tripId !== undefined) return;
+
+    if (templateTrip) {
+      const t = buildTripFromTemplate(templateTrip);
+      setTrip(t);
+      setOpenDayIndex(t.days.length ? 0 : -1);
+      setOpenActivity({ dayIndex: -1, activityIndex: -1 });
+    } else {
       setTrip(INITIAL_TRIP);
       setOpenDayIndex(0);
       setOpenActivity({ dayIndex: -1, activityIndex: -1 });
-      return;
     }
+  }, [tripId, templateTrip]);
+
+
+  useEffect(() => {
+    if (tripId === undefined) return;
 
     fetch(`http://localhost:8080/api/trips/${tripId}/details`, {
-      headers: {
-        authorization: loggedInUser?.diyJwt
-      }
+      headers: { authorization: loggedInUser?.diyJwt }
     })
-      .then(res => {
+      .then((res) => {
         if (res.status >= 200 && res.status < 300) {
           return res.json();
         } else if (res.status === 401) {
@@ -62,10 +107,10 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
           return null;
         }
       })
-      .then(data => {
+      .then((data) => {
         if (!data) return;
         data.days = data.days ?? [];
-        data.days.forEach(d => (d.activities = d.activities ?? []));
+        data.days.forEach((d) => (d.activities = d.activities ?? []));
         setTrip(data);
         setOpenDayIndex(data.days.length ? 0 : -1);
       });
@@ -86,27 +131,51 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   }, [loggedInUser, trip, tripId, setLoggedInUser]);
 
   function toggleDay(i) {
-    setOpenDayIndex(prev => (prev === i ? -1 : i));
+    setOpenDayIndex((prev) => (prev === i ? -1 : i));
     setOpenActivity({ dayIndex: -1, activityIndex: -1 });
   }
 
   function toggleActivity(dayIndex, activityIndex) {
-    setOpenActivity(prev => {
+    setOpenActivity((prev) => {
       const same = prev.dayIndex === dayIndex && prev.activityIndex === activityIndex;
       return same ? { dayIndex: -1, activityIndex: -1 } : { dayIndex, activityIndex };
     });
   }
 
-
+ 
   function handleTripChange(e) {
     const { name, value } = e.target;
-    setTrip(prev => ({ ...prev, [name]: value }));
+
+
+    if (name === "startDate") {
+      setTrip((prev) => {
+        const copy = structuredClone(prev);
+        copy.startDate = value;
+
+ 
+        if (copy.days?.length) {
+          copy.days = copy.days.map((d, idx) => ({
+            ...d,
+            dayDate: value ? addDays(value, idx) : ""
+          }));
+        }
+        return copy;
+      });
+      return;
+    }
+
+    setTrip((prev) => ({ ...prev, [name]: value }));
   }
 
-
   function addDay() {
-    setTrip(prev => {
+    setTrip((prev) => {
       const nextDays = [...(prev.days ?? []), emptyDay()];
+
+
+      const start = prev.startDate;
+      const newIndex = nextDays.length - 1;
+      if (start) nextDays[newIndex].dayDate = addDays(start, newIndex);
+
       return { ...prev, days: nextDays };
     });
 
@@ -115,13 +184,20 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   }
 
   function removeDay(dayIndex) {
-    setTrip(prev => {
+    setTrip((prev) => {
       const nextDays = prev.days.filter((_, i) => i !== dayIndex);
+
+
+      if (prev.startDate) {
+        nextDays.forEach((d, idx) => {
+          d.dayDate = addDays(prev.startDate, idx);
+        });
+      }
+
       return { ...prev, days: nextDays };
     });
 
-
-    setOpenDayIndex(prev => {
+    setOpenDayIndex((prev) => {
       if (prev === dayIndex) return -1;
       if (prev > dayIndex) return prev - 1;
       return prev;
@@ -130,35 +206,42 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
     setOpenActivity({ dayIndex: -1, activityIndex: -1 });
   }
 
+
+  const lockDayDates = tripId === undefined && !!templateTrip;
+
   function handleDayChange(dayIndex, e) {
+    if (lockDayDates && e.target.name === "dayDate") {
+
+      return;
+    }
+
     const { name, value } = e.target;
-    setTrip(prev => {
+    setTrip((prev) => {
       const copy = structuredClone(prev);
       copy.days[dayIndex][name] = value;
       return copy;
     });
   }
 
-
   function addActivity(dayIndex) {
-    setTrip(prev => {
+    setTrip((prev) => {
       const copy = structuredClone(prev);
       copy.days[dayIndex].activities.push(emptyActivity());
       return copy;
     });
 
-    const newIndex = (trip.days?.[dayIndex]?.activities?.length ?? 0);
+    const newIndex = trip.days?.[dayIndex]?.activities?.length ?? 0;
     setOpenActivity({ dayIndex, activityIndex: newIndex });
   }
 
   function removeActivity(dayIndex, activityIndex) {
-    setTrip(prev => {
+    setTrip((prev) => {
       const copy = structuredClone(prev);
       copy.days[dayIndex].activities = copy.days[dayIndex].activities.filter((_, i) => i !== activityIndex);
       return copy;
     });
 
-    setOpenActivity(prev => {
+    setOpenActivity((prev) => {
       if (prev.dayIndex === dayIndex && prev.activityIndex === activityIndex) {
         return { dayIndex: -1, activityIndex: -1 };
       }
@@ -171,7 +254,7 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
   function handleActivityChange(dayIndex, activityIndex, e) {
     const { name, value } = e.target;
-    setTrip(prev => {
+    setTrip((prev) => {
       const copy = structuredClone(prev);
       copy.days[dayIndex].activities[activityIndex][name] = value;
       return copy;
@@ -190,11 +273,11 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
     payload.notes = payload.notes ?? "";
     payload.days = payload.days ?? [];
 
-    payload.days.forEach(d => {
+    payload.days.forEach((d) => {
       d.dayNotes = d.dayNotes ?? "";
       d.activities = d.activities ?? [];
 
-      d.activities.forEach(a => {
+      d.activities.forEach((a) => {
         a.description = a.description === "" ? null : a.description;
         a.location = a.location === "" ? null : a.location;
         a.startTime = a.startTime === "" ? null : normalizeTime(a.startTime);
@@ -205,25 +288,26 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
     return payload;
   }
 
-
   function handleCancel() {
-  
-
     if (tripId) {
       navigate(`/trips/${tripId}`);
     } else {
-      
       navigate("/");
     }
   }
 
- 
   function handleSubmit(e) {
     e.preventDefault();
     setErrors([]);
 
     if (!loggedInUser?.diyJwt) {
       setErrors(["You must be logged in."]);
+      return;
+    }
+
+
+    if (templateTrip && !trip.startDate) {
+      setErrors(["Please choose a Start Date so we can generate Day dates from the template."]);
       return;
     }
 
@@ -245,20 +329,20 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
       },
       body: JSON.stringify(payload)
     })
-      .then(res => {
+      .then((res) => {
         if (res.status >= 200 && res.status < 300) {
           return res.json();
         } else if (res.status === 401) {
           setErrors(["Unauthorized. Please log in again."]);
           return null;
         } else {
-          return res.text().then(t => {
+          return res.text().then((t) => {
             setErrors([t || "Request failed."]);
             return null;
           });
         }
       })
-      .then(saved => {
+      .then((saved) => {
         if (!saved) return;
         const id = saved.tripId ?? tripId;
         navigate(`/trips/${id}`);
@@ -269,9 +353,13 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   return (
     <div className="container py-4" style={{ maxWidth: 980 }}>
       <div className="mb-3">
-        <h2 className="mb-0">{tripId ? "Edit Trip" : "Create Trip"}</h2>
+        <h2 className="mb-0">{tripId ? "Edit Trip" : templateTrip ? "Create Trip from Template" : "Create Trip"}</h2>
         <small className="text-muted">
-          {tripId ? "Update your itinerary and save changes." : "Add days and activities, then save everything at once."}
+          {tripId
+            ? "Update your itinerary and save changes."
+            : templateTrip
+            ? "Pick dates, review the itinerary, then save your own copy."
+            : "Add days and activities, then save everything at once."}
         </small>
       </div>
 
@@ -279,7 +367,9 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
         <div className="alert alert-danger">
           <div className="fw-semibold mb-1">Please fix:</div>
           <ul className="mb-0">
-            {errors.map((e, idx) => <li key={idx}>{e}</li>)}
+            {errors.map((e, idx) => (
+              <li key={idx}>{e}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -304,18 +394,38 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
               <div className="col-md-6">
                 <label className="form-label">Start Date *</label>
-                <input className="form-control" type="date" name="startDate" value={trip.startDate ?? ""} onChange={handleTripChange} />
+                <input
+                  className="form-control"
+                  type="date"
+                  name="startDate"
+                  value={trip.startDate ?? ""}
+                  onChange={handleTripChange}
+                />
               </div>
 
               <div className="col-md-6">
                 <label className="form-label">End Date *</label>
-                <input className="form-control" type="date" name="endDate" value={trip.endDate ?? ""} onChange={handleTripChange} />
+                <input
+                  className="form-control"
+                  type="date"
+                  name="endDate"
+                  value={trip.endDate ?? ""}
+                  onChange={handleTripChange}
+                />
               </div>
 
               <div className="col-12">
                 <label className="form-label">Notes</label>
                 <textarea className="form-control" name="notes" rows={3} value={trip.notes ?? ""} onChange={handleTripChange} />
               </div>
+
+              {templateTrip && (
+                <div className="col-12">
+                  <div className="alert alert-info mb-0">
+                    Template loaded. Choose a <strong>Start Date</strong> to auto-fill Day dates.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -356,7 +466,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
               {isOpen && (
                 <div className="card-body">
-                  {/* Day fields */}
                   <div className="row g-3 align-items-end">
                     <div className="col-md-4">
                       <label className="form-label">Day Date *</label>
@@ -366,7 +475,11 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                         name="dayDate"
                         value={day.dayDate ?? ""}
                         onChange={(e) => handleDayChange(dayIndex, e)}
+                        disabled={lockDayDates}  
                       />
+                      {lockDayDates && (
+                        <div className="form-text">Generated from Start Date.</div>
+                      )}
                     </div>
 
                     <div className="col-md-8">
@@ -381,7 +494,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                     </div>
                   </div>
 
-                  {/* Activities header */}
                   <div className="d-flex justify-content-between align-items-center mt-3">
                     <div className="fw-semibold">Activities</div>
                     <button className="btn btn-sm btn-primary" type="button" onClick={() => addActivity(dayIndex)}>
@@ -395,11 +507,9 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                     </div>
                   )}
 
-                  {/* Activities dropdown list */}
                   <div className="mt-3 d-flex flex-column gap-2">
                     {day.activities.map((a, activityIndex) => {
-                      const aOpen =
-                        openActivity.dayIndex === dayIndex && openActivity.activityIndex === activityIndex;
+                      const aOpen = openActivity.dayIndex === dayIndex && openActivity.activityIndex === activityIndex;
 
                       return (
                         <div className="border rounded" key={a.activityId || `a-${dayIndex}-${activityIndex}`}>
@@ -487,7 +597,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                     })}
                   </div>
 
-                  {/* Optional: add day button after each day */}
                   <div className="mt-3">
                     <button className="btn btn-outline-primary" type="button" onClick={addDay}>
                       + Add Another Day
@@ -499,7 +608,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
           );
         })}
 
-        {/* Sticky footer actions */}
         <div className="position-sticky bottom-0 bg-white border-top py-3 mt-4" style={{ zIndex: 10 }}>
           <div className="d-flex justify-content-between align-items-center">
             <button className="btn btn-primary" type="button" onClick={addDay}>
