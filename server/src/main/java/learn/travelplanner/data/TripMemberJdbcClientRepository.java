@@ -1,9 +1,12 @@
 package learn.travelplanner.data;
 
+import learn.travelplanner.data.mappers.TripMemberMapper;
 import learn.travelplanner.models.TripMember;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public class TripMemberJdbcClientRepository implements TripMemberRepository{
@@ -32,4 +35,19 @@ public class TripMemberJdbcClientRepository implements TripMemberRepository{
         }
         return member;
     }
+
+    @Override
+    public List<TripMember> findByTripId(int tripId) {
+        final String sql = """
+            select trip_id, user_id, role
+            from trip_member
+            where trip_id = :trip_id;
+            """;
+
+        return jdbcClient.sql(sql)
+                .param("trip_id", tripId)
+                .query(new TripMemberMapper())
+                .list();
+    }
+
 }

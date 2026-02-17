@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -40,4 +42,19 @@ class TripMemberJdbcClientRepositoryTest {
         assertNotNull(tripMember);
         assertTrue(tripMember.getRole().equals("VIEWER"));
     }
+    @Test
+    void shouldFindByTripId() {
+        List<TripMember> members = repository.findByTripId(2);
+        assertNotNull(members);
+        assertFalse(members.isEmpty());
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenTripIdNotFound() {
+        List<TripMember> members = repository.findByTripId(999);
+        assertTrue(members.isEmpty());
+    }
+
+
+
 }
