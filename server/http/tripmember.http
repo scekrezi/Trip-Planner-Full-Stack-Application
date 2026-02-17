@@ -1,0 +1,31 @@
+@base_url = http://localhost:8080/api/trips
+
+@auth_owner = {"userId":1,"email":"admin@travel.com"}|-2120907375
+@auth_collab = {"userId":2,"email":"collab@travel.com"}|-2120907375
+@auth_random = {"userId":99,"email":"random@travel.com"}|-2120907375
+
+# Trip Members
+# ======================================
+
+### GET members - owner (200)
+GET {{base_url}}/2/members
+Authorization: {{auth_owner}}
+
+### GET members - collaborator (200)
+GET {{base_url}}/2/members
+Authorization: {{auth_collab}}
+
+### GET members - forbidden (403)
+GET {{base_url}}/2/members
+Authorization: {{auth_random}}
+
+### POST add member - owner (201)
+POST {{base_url}}/2/members
+Content-Type: application/json
+Authorization: {{auth_owner}}
+
+{
+  "user": { "email": "collab@travel.com" },
+  "role": "VIEWER"
+}
+

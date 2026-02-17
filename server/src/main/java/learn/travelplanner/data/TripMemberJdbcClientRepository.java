@@ -50,4 +50,22 @@ public class TripMemberJdbcClientRepository implements TripMemberRepository{
                 .list();
     }
 
+    @Override
+    public boolean isMember(int tripId, int userId) {
+        final String sql = """
+        select count(*)
+        from trip_member
+        where trip_id = :trip_id and user_id = :user_id;
+        """;
+
+        Integer count = jdbcClient.sql(sql)
+                .param("trip_id", tripId)
+                .param("user_id", userId)
+                .query(Integer.class)
+                .single();
+
+        return count != null && count > 0;
+    }
+
+
 }

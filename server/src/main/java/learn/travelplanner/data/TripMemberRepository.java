@@ -8,4 +8,5 @@ import java.util.List;
 public interface TripMemberRepository {
     TripMember add(TripMember member);
     List<TripMember> findByTripId(int tripId);
+    boolean isMember(int tripId, int userId);
 }

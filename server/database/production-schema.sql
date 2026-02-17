@@ -60,3 +60,4 @@ create table activity (
     constraint uq_activity_order
         unique (trip_day_id, order_index)
 );
+
