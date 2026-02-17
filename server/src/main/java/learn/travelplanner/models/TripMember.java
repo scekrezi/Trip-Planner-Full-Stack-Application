@@ -40,4 +40,19 @@ public class TripMember {
         this.role = role;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TripMember that = (TripMember) o;
+        return Objects.equals(trip, that.trip) && Objects.equals(user, that.user) && Objects.equals(role, that.role);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(trip);
+        result = 31 * result + Objects.hashCode(user);
+        result = 31 * result + Objects.hashCode(role);
+        return result;
+    }
 }

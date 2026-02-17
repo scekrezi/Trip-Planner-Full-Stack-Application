@@ -10,5 +10,6 @@ public interface TripsRepository {
     List<Trip> findByOwnerId(int ownerId) throws DataAccessException;
     boolean deleteById(int tripId, int ownerUserId) throws DataAccessException;
 
+
 }
 
