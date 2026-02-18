@@ -316,12 +316,9 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
                   >
                     <div>
                       <div className="fw-semibold">
-                        {m.user?.email
-                          ? m.user.email
-                          : m.user?.userId || m.user?.id
-                          ? `User #${m.user?.userId ?? m.user?.id}`
-                          : "Unknown user"}
-                      </div>
+  Collaborator: {m.user?.email ?? "Unknown"}
+</div>
+
                       <div className="text-muted small">Role: {m.role ?? "?"}</div>
                     </div>
                     <span className="badge text-bg-secondary">{m.role ?? "?"}</span>

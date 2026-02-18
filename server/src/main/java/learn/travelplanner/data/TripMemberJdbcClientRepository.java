@@ -39,16 +39,21 @@ public class TripMemberJdbcClientRepository implements TripMemberRepository{
     @Override
     public List<TripMember> findByTripId(int tripId) {
         final String sql = """
-            select trip_id, user_id, role
-            from trip_member
-            where trip_id = :trip_id;
-            """;
+        select tm.trip_id,
+               tm.user_id,
+               tm.role,
+               u.email
+        from trip_member tm
+        join user u on u.user_id = tm.user_id
+        where tm.trip_id = :trip_id;
+        """;
 
         return jdbcClient.sql(sql)
                 .param("trip_id", tripId)
                 .query(new TripMemberMapper())
                 .list();
     }
+
 
     @Override
     public boolean isMember(int tripId, int userId) {

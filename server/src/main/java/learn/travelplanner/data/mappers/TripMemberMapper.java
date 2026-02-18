@@ -18,6 +18,7 @@ public class TripMemberMapper implements RowMapper<TripMember> {
 
         User user = new User();
         user.setUserId(rs.getInt("user_id"));
+        user.setEmail(rs.getString("email"));
 
         TripMember tripMember = new TripMember();
         tripMember.setTrip(trip);
