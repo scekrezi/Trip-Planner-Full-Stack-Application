@@ -193,4 +193,42 @@ public class TripService {
 
         return result;
     }
+
+    public List<Trip> findInvitedByUserId(int userId) {
+        return repository.findInvitedByUserId(userId);
+    }
+
+    public List<Trip> findUpcomingInvited(int userId) {
+
+        List<Trip> all = findInvitedByUserId(userId);
+        List<Trip> upcoming = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+
+        for (Trip t : all) {
+            if (t.getEndDate() == null || !t.getEndDate().isBefore(today)) {
+                upcoming.add(t);
+            }
+        }
+
+        return upcoming;
+    }
+
+    public List<Trip> findPastInvited(int userId) {
+
+        List<Trip> all = findInvitedByUserId(userId);
+        List<Trip> past = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+
+        for (Trip t : all) {
+            if (t.getEndDate() != null && t.getEndDate().isBefore(today)) {
+                past.add(t);
+            }
+        }
+
+        return past;
+    }
+
+
 }

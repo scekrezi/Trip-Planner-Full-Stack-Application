@@ -10,6 +10,7 @@ export default function TripDetails({ loggedInUser }) {
 
   const [members, setMembers] = useState([]);
   const [membersError, setMembersError] = useState(null);
+  const [membersLoaded, setMembersLoaded] = useState(false);
 
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
@@ -17,7 +18,7 @@ export default function TripDetails({ loggedInUser }) {
   const [addMemberError, setAddMemberError] = useState(null);
   const [addMemberSuccess, setAddMemberSuccess] = useState(null);
 
-const isLoggedIn = !!(loggedInUser?.diyJwt);
+  const isLoggedIn = !!loggedInUser?.diyJwt;
   const loggedInUserId = loggedInUser?.id ?? loggedInUser?.userId;
 
   function buildHeaders() {
@@ -27,9 +28,15 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
   }
 
   function refreshMembers() {
-    if (!loggedInUser?.diyJwt) return;
+    if (!loggedInUser?.diyJwt) {
+      setMembers([]);
+      setMembersLoaded(true);
+      return;
+    }
 
     setMembersError(null);
+    setMembersLoaded(false);
+
     fetch(`http://localhost:8080/api/trips/${tripId}/members`, {
       headers: buildHeaders(),
     })
@@ -43,7 +50,8 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
         return res.json();
       })
       .then((data) => setMembers(Array.isArray(data) ? data : []))
-      .catch((err) => setMembersError(err.message));
+      .catch((err) => setMembersError(err.message))
+      .finally(() => setMembersLoaded(true));
   }
 
   function handleAddMember(e) {
@@ -89,17 +97,15 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
       .catch((err) => setAddMemberError(err.message));
   }
 
-  
   function handleUseTemplate() {
     if (!trip) return;
 
-    
     const templateTrip = {
       country: trip.country ?? "",
       city: trip.city ?? "",
       notes: trip.notes ?? "",
       startDate: "",
-      endDate: "",   
+      endDate: "",
       days: (trip.days ?? []).map((d) => ({
         dayDate: "",
         dayNotes: d.dayNotes ?? "",
@@ -113,15 +119,17 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
       })),
     };
 
- 
     navigate("/trips/add", { state: { templateTrip } });
   }
 
   useEffect(() => {
     setError(null);
     setTrip(null);
+
     setMembers([]);
     setMembersError(null);
+    setMembersLoaded(false);
+
     setShowAddMember(false);
     setAddMemberError(null);
     setAddMemberSuccess(null);
@@ -144,24 +152,38 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
         if (!data) return;
         setTrip(data);
 
-        if (loggedInUser?.diyJwt) {
-          refreshMembers();
-        }
+       
+        refreshMembers();
       })
       .catch((err) => setError(err.message));
 
-  }, [tripId, loggedInUser, navigate]);
+  }, [tripId, loggedInUser?.diyJwt, navigate]);
 
   if (error) return <div className="alert alert-danger">{error}</div>;
   if (!trip) return <div>Loading trip...</div>;
 
- const isTemplate = !!(trip?.isTemplate ?? trip?.template ?? trip?.is_template);
+  const isTemplate = !!(trip?.isTemplate ?? trip?.template ?? trip?.is_template);
 
   const ownerId = trip?.owner?.userId ?? trip?.owner?.id;
   const isOwner =
     isLoggedIn && ownerId && loggedInUserId && ownerId === loggedInUserId;
 
-  const canManage = isLoggedIn && !isTemplate && isOwner;
+  const canManageMembers = isLoggedIn && !isTemplate && isOwner;
+
+
+  const myMember = members.find((m) => {
+    const memberUserId = m?.user?.userId ?? m?.user?.id;
+    return memberUserId && loggedInUserId && memberUserId === loggedInUserId;
+  });
+
+  const myRole = (myMember?.role ?? "").toUpperCase(); 
+  const isEditor = isLoggedIn && myRole === "EDITOR";
+
+
+  const canEditTrip = isLoggedIn && !isTemplate && (isOwner || isEditor);
+
+
+  const showViewOnly = isLoggedIn && !isTemplate && membersLoaded && !canEditTrip;
 
   return (
     <div className="container py-4" style={{ maxWidth: 980 }}>
@@ -181,7 +203,6 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
             <div className="mt-2 d-flex gap-2 align-items-center flex-wrap">
               <span className="badge text-bg-secondary">Template</span>
 
-              {/* */}
               {isLoggedIn && (
                 <button
                   className="btn btn-sm btn-primary"
@@ -195,7 +216,7 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
           )}
         </div>
 
-        {canManage && (
+        {canEditTrip ? (
           <div className="d-flex gap-2">
             <button
               className="btn btn-outline-primary"
@@ -205,15 +226,22 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
               Edit
             </button>
 
-            <button
-              className="btn btn-outline-danger"
-              type="button"
-              onClick={() => navigate(`/trips/${tripId}/delete`)}
-            >
-              Delete
-            </button>
+            {/* Only owner can delete */}
+            {isOwner && (
+              <button
+                className="btn btn-outline-danger"
+                type="button"
+                onClick={() => navigate(`/trips/${tripId}/delete`)}
+              >
+                Delete
+              </button>
+            )}
           </div>
-        )}
+        ) : showViewOnly ? (
+          <div className="d-flex align-items-center">
+            <span className="badge text-bg-secondary">View only</span>
+          </div>
+        ) : null}
       </div>
 
       {trip.notes && (
@@ -233,7 +261,7 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
       <div className="d-flex justify-content-between align-items-center mb-2">
         <h3 className="mb-0">Collaborators</h3>
 
-        {canManage && (
+        {canManageMembers && (
           <button
             className="btn btn-sm btn-outline-primary"
             type="button"
@@ -257,7 +285,7 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
               <div className="alert alert-danger">{membersError}</div>
             )}
 
-            {showAddMember && canManage && (
+            {showAddMember && canManageMembers && (
               <form onSubmit={handleAddMember} className="mb-3">
                 {addMemberError && (
                   <div className="alert alert-danger">{addMemberError}</div>
@@ -316,12 +344,16 @@ const isLoggedIn = !!(loggedInUser?.diyJwt);
                   >
                     <div>
                       <div className="fw-semibold">
-  Collaborator: {m.user?.email ?? "Unknown"}
-</div>
+                        Collaborator: {m.user?.email ?? "Unknown"}
+                      </div>
 
-                      <div className="text-muted small">Role: {m.role ?? "?"}</div>
+                      <div className="text-muted small">
+                        Role: {m.role ?? "?"}
+                      </div>
                     </div>
-                    <span className="badge text-bg-secondary">{m.role ?? "?"}</span>
+                    <span className="badge text-bg-secondary">
+                      {m.role ?? "?"}
+                    </span>
                   </li>
                 ))}
               </ul>

@@ -89,5 +89,20 @@ class TripsJdbcClientRepositoryTest {
         assertNull(repository.findById(2));
     }
 
+    @Test
+    void shouldFindInvitedTripsForUser2AndSetRole() {
+        List<Trip> trips = repository.findInvitedByUserId(2);
+
+        Trip trip = trips.stream()
+                .filter(t -> t.getTripId() == 2)
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(trip);
+        assertEquals("EDITOR", trip.getMyRole());
+    }
+
+
+
 
 }

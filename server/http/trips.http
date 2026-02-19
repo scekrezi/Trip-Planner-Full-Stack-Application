@@ -130,6 +130,22 @@ GET {{base_url}}/mine/past
 Authorization: {{auth_header}}
 
 
+### View trips where you are a collaborator
+# =======================================
+
+### invited upcoming - unauthorized (401)
+GET {{base_url}}/invited/upcoming
+
+### invited upcoming - happy path
+GET {{base_url}}/invited/upcoming
+Authorization: {{auth_header}}
+
+### invited past - happy path
+GET {{base_url}}/invited/past
+Authorization: {{auth_header}}
+
+
+
 # Update
 # =========================================
 

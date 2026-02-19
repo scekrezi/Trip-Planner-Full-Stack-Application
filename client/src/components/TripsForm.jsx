@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const INITIAL_TRIP = {
   country: "",
@@ -7,14 +7,14 @@ const INITIAL_TRIP = {
   startDate: "",
   endDate: "",
   notes: "",
-  days: []
+  days: [],
 };
 
 const emptyDay = () => ({
   tripDayId: 0,
   dayDate: "",
   dayNotes: "",
-  activities: []
+  activities: [],
 });
 
 const emptyActivity = () => ({
@@ -23,9 +23,8 @@ const emptyActivity = () => ({
   description: "",
   location: "",
   startTime: "",
-  endTime: ""
+  endTime: "",
 });
-
 
 function addDays(dateString, offset) {
   if (!dateString) return "";
@@ -35,7 +34,6 @@ function addDays(dateString, offset) {
 }
 
 function buildTripFromTemplate(templateTrip) {
-  
   return {
     country: templateTrip?.country ?? "",
     city: templateTrip?.city ?? "",
@@ -51,10 +49,10 @@ function buildTripFromTemplate(templateTrip) {
         title: a?.title ?? "",
         description: a?.description ?? "",
         location: a?.location ?? "",
-        startTime: "", 
-        endTime: ""
-      }))
-    }))
+        startTime: "",
+        endTime: "",
+      })),
+    })),
   };
 }
 
@@ -73,9 +71,67 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   const [openActivity, setOpenActivity] = useState({ dayIndex: -1, activityIndex: -1 });
 
 
-  useEffect(() => {
+  const [members, setMembers] = useState([]);
+  const [membersLoaded, setMembersLoaded] = useState(false);
+  const [permissionError, setPermissionError] = useState(null);
 
+  const isLoggedIn = !!loggedInUser?.diyJwt;
+  const loggedInId = loggedInUser?.userId ?? loggedInUser?.id;
+
+  function authHeaders(extra = {}) {
+    const headers = { Accept: "application/json", ...extra };
+    if (loggedInUser?.diyJwt) headers.authorization = loggedInUser.diyJwt;
+    return headers;
+  }
+
+  function refreshMembers(currentTripId) {
+    if (!currentTripId) return;
+
+    if (!loggedInUser?.diyJwt) {
+      setMembers([]);
+      setMembersLoaded(true);
+      return;
+    }
+
+    setMembersLoaded(false);
+
+    fetch(`http://localhost:8080/api/trips/${currentTripId}/members`, {
+      headers: authHeaders(),
+    })
+      .then(async (res) => {
+        if (res.status === 401) {
+        
+          setLoggedInUser?.(null);
+          localStorage.removeItem("loggedInUser");
+          navigate("/login");
+          return [];
+        }
+        if (res.status === 403) {
+          
+          return [];
+        }
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || `Members request failed: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => setMembers(Array.isArray(data) ? data : []))
+      .catch((e) => {
+      
+        setPermissionError(e.message);
+        setMembers([]);
+      })
+      .finally(() => setMembersLoaded(true));
+  }
+
+
+  useEffect(() => {
     if (tripId !== undefined) return;
+
+    setPermissionError(null);
+    setMembers([]);
+    setMembersLoaded(false);
 
     if (templateTrip) {
       const t = buildTripFromTemplate(templateTrip);
@@ -93,17 +149,32 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   useEffect(() => {
     if (tripId === undefined) return;
 
+    setPermissionError(null);
+    setErrors([]);
+    setMembers([]);
+    setMembersLoaded(false);
+
     fetch(`http://localhost:8080/api/trips/${tripId}/details`, {
-      headers: { authorization: loggedInUser?.diyJwt }
+      headers: authHeaders(),
     })
-      .then((res) => {
+      .then(async (res) => {
         if (res.status >= 200 && res.status < 300) {
           return res.json();
         } else if (res.status === 401) {
+      
+          setLoggedInUser?.(null);
+          localStorage.removeItem("loggedInUser");
           navigate("/login");
           return null;
-        } else {
+        } else if (res.status === 403) {
+          setPermissionError("You don’t have permission to view/edit this trip.");
+          return null;
+        } else if (res.status === 404) {
           navigate("/notFound");
+          return null;
+        } else {
+          const text = await res.text();
+          setPermissionError(text || "Request failed.");
           return null;
         }
       })
@@ -113,22 +184,37 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
         data.days.forEach((d) => (d.activities = d.activities ?? []));
         setTrip(data);
         setOpenDayIndex(data.days.length ? 0 : -1);
-      });
-  }, [tripId, loggedInUser, navigate]);
+
+      
+        refreshMembers(tripId);
+      })
+      .catch((e) => setPermissionError(e.message));
+ 
+  }, [tripId, loggedInUser?.diyJwt, navigate]);
+
+
+  const ownerId = trip?.owner?.userId ?? trip?.owner?.id;
+  const isOwner = !!(isLoggedIn && loggedInId && ownerId && loggedInId === ownerId);
+
+  const myMember = members.find((m) => {
+    const memberId = m?.user?.userId ?? m?.user?.id;
+    return memberId && loggedInId && memberId === loggedInId;
+  });
+  const myRole = (myMember?.role ?? "").toUpperCase();
+  const isEditor = !!(isLoggedIn && myRole === "EDITOR");
+
+  const canEditTrip = !!(tripId ? (isOwner || isEditor) : true);
 
 
   useEffect(() => {
     if (!tripId) return;
-    if (loggedInUser && trip.owner) {
-      const loggedId = loggedInUser.userId ?? loggedInUser.id;
-      const ownerId = trip.owner.userId ?? trip.owner.id;
-
-      if (loggedId && ownerId && loggedId !== ownerId) {
-        localStorage.setItem("loggedInUser", null);
-        setLoggedInUser(null);
-      }
+    if (!isLoggedIn) return; 
+    if (!membersLoaded) return;
+    if (!canEditTrip) {
+      setPermissionError("View-only: you don’t have permission to edit this trip.");
+      navigate(`/trips/${tripId}`);
     }
-  }, [loggedInUser, trip, tripId, setLoggedInUser]);
+  }, [tripId, isLoggedIn, membersLoaded, canEditTrip, navigate]);
 
   function toggleDay(i) {
     setOpenDayIndex((prev) => (prev === i ? -1 : i));
@@ -142,21 +228,18 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
     });
   }
 
- 
   function handleTripChange(e) {
     const { name, value } = e.target;
-
 
     if (name === "startDate") {
       setTrip((prev) => {
         const copy = structuredClone(prev);
         copy.startDate = value;
 
- 
         if (copy.days?.length) {
           copy.days = copy.days.map((d, idx) => ({
             ...d,
-            dayDate: value ? addDays(value, idx) : ""
+            dayDate: value ? addDays(value, idx) : "",
           }));
         }
         return copy;
@@ -170,12 +253,9 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   function addDay() {
     setTrip((prev) => {
       const nextDays = [...(prev.days ?? []), emptyDay()];
-
-
       const start = prev.startDate;
       const newIndex = nextDays.length - 1;
       if (start) nextDays[newIndex].dayDate = addDays(start, newIndex);
-
       return { ...prev, days: nextDays };
     });
 
@@ -186,7 +266,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   function removeDay(dayIndex) {
     setTrip((prev) => {
       const nextDays = prev.days.filter((_, i) => i !== dayIndex);
-
 
       if (prev.startDate) {
         nextDays.forEach((d, idx) => {
@@ -206,12 +285,10 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
     setOpenActivity({ dayIndex: -1, activityIndex: -1 });
   }
 
-
   const lockDayDates = tripId === undefined && !!templateTrip;
 
   function handleDayChange(dayIndex, e) {
     if (lockDayDates && e.target.name === "dayDate") {
-
       return;
     }
 
@@ -289,11 +366,8 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   }
 
   function handleCancel() {
-    if (tripId) {
-      navigate(`/trips/${tripId}`);
-    } else {
-      navigate("/");
-    }
+    if (tripId) navigate(`/trips/${tripId}`);
+    else navigate("/");
   }
 
   function handleSubmit(e) {
@@ -305,6 +379,11 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
       return;
     }
 
+   
+    if (tripId && !canEditTrip) {
+      setErrors(["View-only: you don’t have permission to edit this trip."]);
+      return;
+    }
 
     if (templateTrip && !trip.startDate) {
       setErrors(["Please choose a Start Date so we can generate Day dates from the template."]);
@@ -312,9 +391,7 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
     }
 
     const method = tripId ? "PUT" : "POST";
-    const url = tripId
-      ? `http://localhost:8080/api/trips/${tripId}`
-      : `http://localhost:8080/api/trips`;
+    const url = tripId ? `http://localhost:8080/api/trips/${tripId}` : `http://localhost:8080/api/trips`;
 
     const payload = toPayload(trip);
 
@@ -322,25 +399,24 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
     fetch(url, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        authorization: loggedInUser.diyJwt
-      },
-      body: JSON.stringify(payload)
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
     })
-      .then((res) => {
+      .then(async (res) => {
         if (res.status >= 200 && res.status < 300) {
           return res.json();
-        } else if (res.status === 401) {
+        }
+        if (res.status === 401) {
           setErrors(["Unauthorized. Please log in again."]);
           return null;
-        } else {
-          return res.text().then((t) => {
-            setErrors([t || "Request failed."]);
-            return null;
-          });
         }
+        if (res.status === 403) {
+          setErrors(["Forbidden. You don’t have permission to save changes."]);
+          return null;
+        }
+        const t = await res.text();
+        setErrors([t || "Request failed."]);
+        return null;
       })
       .then((saved) => {
         if (!saved) return;
@@ -350,10 +426,23 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
       .finally(() => setIsSaving(false));
   }
 
+  if (permissionError) {
+    return (
+      <div className="container py-4" style={{ maxWidth: 980 }}>
+        <div className="alert alert-danger">{permissionError}</div>
+        <button className="btn btn-outline-secondary" type="button" onClick={handleCancel}>
+          Back
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="container py-4" style={{ maxWidth: 980 }}>
       <div className="mb-3">
-        <h2 className="mb-0">{tripId ? "Edit Trip" : templateTrip ? "Create Trip from Template" : "Create Trip"}</h2>
+        <h2 className="mb-0">
+          {tripId ? "Edit Trip" : templateTrip ? "Create Trip from Template" : "Create Trip"}
+        </h2>
         <small className="text-muted">
           {tripId
             ? "Update your itinerary and save changes."
@@ -448,13 +537,10 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
           return (
             <div className="card shadow-sm rounded-3 mb-3" key={day.tripDayId || `day-${dayIndex}`}>
               <div className="card-header bg-white d-flex justify-content-between align-items-center">
-                <button
-                  type="button"
-                  className="btn btn-link text-decoration-none p-0"
-                  onClick={() => toggleDay(dayIndex)}
-                >
+                <button type="button" className="btn btn-link text-decoration-none p-0" onClick={() => toggleDay(dayIndex)}>
                   <span className="fw-semibold">
-                    Day {dayIndex + 1}{day.dayDate ? ` — ${day.dayDate}` : ""}
+                    Day {dayIndex + 1}
+                    {day.dayDate ? ` — ${day.dayDate}` : ""}
                   </span>
                   <span className="ms-2 text-muted">{isOpen ? "▲" : "▼"}</span>
                 </button>
@@ -475,11 +561,9 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                         name="dayDate"
                         value={day.dayDate ?? ""}
                         onChange={(e) => handleDayChange(dayIndex, e)}
-                        disabled={lockDayDates}  
+                        disabled={lockDayDates}
                       />
-                      {lockDayDates && (
-                        <div className="form-text">Generated from Start Date.</div>
-                      )}
+                      {lockDayDates && <div className="form-text">Generated from Start Date.</div>}
                     </div>
 
                     <div className="col-md-8">
@@ -520,7 +604,8 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                               onClick={() => toggleActivity(dayIndex, activityIndex)}
                             >
                               <span className="fw-semibold">
-                                Activity {activityIndex + 1}{a.title ? ` — ${a.title}` : ""}
+                                Activity {activityIndex + 1}
+                                {a.title ? ` — ${a.title}` : ""}
                               </span>
                               <span className="ms-2 text-muted">{aOpen ? "▲" : "▼"}</span>
                             </button>
