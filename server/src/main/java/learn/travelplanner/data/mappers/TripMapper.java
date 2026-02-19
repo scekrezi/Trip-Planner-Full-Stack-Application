@@ -28,11 +28,19 @@ public class TripMapper implements RowMapper<Trip> {
         Date end = rs.getDate("end_date");
         if (end != null) {
             trip.setEndDate(end.toLocalDate());
+
         }
 
         trip.setNotes(rs.getString("notes"));
         trip.setTemplate(rs.getBoolean("is_template"));
         trip.setOwner(owner);
+        try {
+            String myRole = rs.getString("my_role");
+            if (myRole != null) {
+                trip.setMyRole(myRole);
+            }
+        } catch (SQLException ignored) {
+        }
 
         return trip;
     }

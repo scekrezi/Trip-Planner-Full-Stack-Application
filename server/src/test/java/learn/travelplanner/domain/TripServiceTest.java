@@ -269,6 +269,56 @@ class TripServiceTest {
         assertEquals(ResultType.NOT_FOUND, result.getResultType());
     }
 
+    @Test
+    void shouldReturnUpcomingInvitedTrips() {
+        LocalDate today = LocalDate.now();
+
+        Trip future = new Trip();
+        future.setTripId(1);
+        future.setEndDate(today.plusDays(2));
+        future.setMyRole("EDITOR");
+
+        Trip past = new Trip();
+        past.setTripId(2);
+        past.setEndDate(today.minusDays(1));
+        past.setMyRole("VIEWER");
+
+        when(repository.findInvitedByUserId(2))
+                .thenReturn(List.of(future, past));
+
+        List<Trip> result = service.findUpcomingInvited(2);
+
+        assertEquals(1, result.size());
+        assertEquals(1, result.get(0).getTripId());
+    }
+
+    @Test
+    void shouldReturnPastInvitedTrips() {
+        LocalDate today = LocalDate.now();
+
+        Trip past = new Trip();
+        past.setTripId(10);
+        past.setEndDate(today.minusDays(3));
+        past.setMyRole("VIEWER");
+
+        Trip future = new Trip();
+        future.setTripId(20);
+        future.setEndDate(today.plusDays(3));
+        future.setMyRole("EDITOR");
+
+        when(repository.findInvitedByUserId(2))
+                .thenReturn(List.of(past, future));
+
+        List<Trip> result = service.findPastInvited(2);
+
+        assertEquals(1, result.size());
+        assertEquals(10, result.get(0).getTripId());
+    }
+
+
+
+
+
 
 
 

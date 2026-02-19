@@ -4,7 +4,6 @@ insert into `user` (email, password) values
     ('admin@travel.com', 'password'),
     ('collab@travel.com', 'password');
 
-use travel_planner;
 
 -- Ensure admin user exists (optional)
 -- insert ignore into `user` (user_id, email, password) values (1, 'admin@travel.com', 'password');

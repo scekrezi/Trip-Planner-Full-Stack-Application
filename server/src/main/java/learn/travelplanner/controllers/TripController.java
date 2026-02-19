@@ -109,6 +109,34 @@ public class TripController {
         return new ResponseEntity<>(trips, HttpStatus.OK);
     }
 
+    @GetMapping("/invited/upcoming")
+    public ResponseEntity<?> findInvitedUpcoming(@RequestHeader Map<String, String> headers)
+            throws JsonProcessingException {
+
+        User user = getUserFromHeaders(headers);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        List<Trip> trips = service.findUpcomingInvited(user.getUserId());
+        return new ResponseEntity<>(trips, HttpStatus.OK);
+    }
+
+    @GetMapping("/invited/past")
+    public ResponseEntity<?> findInvitedPast(@RequestHeader Map<String, String> headers)
+            throws JsonProcessingException {
+
+        User user = getUserFromHeaders(headers);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        List<Trip> trips = service.findPastInvited(user.getUserId());
+        return new ResponseEntity<>(trips, HttpStatus.OK);
+    }
+
+
+
     @DeleteMapping("/{tripId}")
     public ResponseEntity<Object> delete(@PathVariable int tripId,
                                          @RequestHeader Map<String, String> headers)

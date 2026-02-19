@@ -14,9 +14,7 @@ public class Trip {
     private User owner;
     private boolean isTemplate;
     private List<TripDay> days;
-
-    public Trip() {
-    }
+    private String myRole;
 
     public Trip(User owner, int tripId, String country, String city, LocalDate startDate, LocalDate endDate, String notes, boolean isTemplate, List<TripDay> days) {
         this.owner = owner;
@@ -29,6 +27,11 @@ public class Trip {
         this.isTemplate = isTemplate;
         this.days = days;
     }
+
+    public Trip() {
+    }
+
+
 
     public User getOwner() {
         return owner;
@@ -100,5 +103,13 @@ public class Trip {
 
     public void setDays(List<TripDay> days) {
         this.days = days;
+    }
+
+    public String getMyRole() {
+        return myRole;
+    }
+
+    public void setMyRole(String myRole) {
+        this.myRole = myRole;
     }
 }

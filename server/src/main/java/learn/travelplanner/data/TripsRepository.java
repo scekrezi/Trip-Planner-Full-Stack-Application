@@ -9,7 +9,7 @@ public interface TripsRepository {
     Trip create(Trip Trip) throws DataAccessException;
     List<Trip> findByOwnerId(int ownerId) throws DataAccessException;
     boolean deleteById(int tripId, int ownerUserId) throws DataAccessException;
-
+    List<Trip> findInvitedByUserId(int userId);
 
 }
 

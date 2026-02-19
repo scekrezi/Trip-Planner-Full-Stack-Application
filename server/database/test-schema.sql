@@ -84,7 +84,8 @@ insert into trip (country, city, start_date, end_date, notes, owner_user_id, is_
      ('USA', 'Chicago', '2026-03-01', '2026-03-05', 'Test trip', 1, 0);
 
 insert into trip_member (trip_id, user_id, role)
-values (2, 1, 'VIEWER');
+values (2, 2, 'EDITOR');
+
 
 insert into trip_day (day_date, day_notes, trip_id) values
     ('2099-01-01', 'Day 1: Downtown', 1),

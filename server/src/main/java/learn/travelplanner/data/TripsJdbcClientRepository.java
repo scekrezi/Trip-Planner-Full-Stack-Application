@@ -111,6 +111,21 @@ public class TripsJdbcClientRepository implements TripsRepository{
         return rows > 0;
     }
 
+    @Override
+    public List<Trip> findInvitedByUserId(int userId) {
+        final String sql = """
+        select t.*, tm.role as my_role
+        from trip t
+        join trip_member tm on tm.trip_id = t.trip_id
+        where tm.user_id = :user_id;
+        """;
+
+        return jdbcClient.sql(sql)
+                .param("user_id", userId)
+                .query(new TripMapper())
+                .list();
+    }
+
 
 
 }
