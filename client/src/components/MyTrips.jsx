@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 export default function MyTrips({ loggedInUser }) {
   const navigate = useNavigate();
 
-
   const [view, setView] = useState("mine");
 
   const [mineUpcoming, setMineUpcoming] = useState([]);
@@ -37,13 +36,11 @@ export default function MyTrips({ loggedInUser }) {
 
     Promise.all([fetchMineUpcoming, fetchMinePast, fetchInvitedUpcoming, fetchInvitedPast])
       .then(async ([muRes, mpRes, iuRes, ipRes]) => {
-       
-        if ([muRes, mpRes, iuRes, ipRes].some(r => r.status === 401)) {
+        if ([muRes, mpRes, iuRes, ipRes].some((r) => r.status === 401)) {
           navigate("/login");
           return;
         }
 
-        
         const all = [muRes, mpRes, iuRes, ipRes];
         for (const r of all) {
           if (!(r.status >= 200 && r.status < 300)) {
@@ -62,34 +59,42 @@ export default function MyTrips({ loggedInUser }) {
         setInvitedUpcoming(iuData ?? []);
         setInvitedPast(ipData ?? []);
       })
-      .catch(err => setError(err.message))
+      .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
   }, [headers, loggedInUser, navigate]);
 
   function TripCard({ trip }) {
-    const roleBadge = trip.myRole; 
+    const roleBadge = trip.myRole;
 
     return (
       <div
-        className="card shadow-sm rounded-3 mb-2"
-        style={{ cursor: "pointer" }}
+        className="trip-row trip-row-clickable d-flex justify-content-between align-items-center"
+        role="button"
+        tabIndex={0}
         onClick={() => navigate(`/trips/${trip.tripId}`)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") navigate(`/trips/${trip.tripId}`);
+        }}
       >
-        <div className="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <div className="fw-semibold d-flex align-items-center gap-2">
+        <div>
+          <div className="d-flex align-items-center gap-2">
+            <div className="trip-title">
               {trip.city}, {trip.country}
-              {roleBadge && (
-                <span className="badge text-bg-info">{roleBadge}</span>
-              )}
             </div>
 
-            <div className="text-muted small">
-              {trip.startDate ?? "No start date"} → {trip.endDate ?? "No end date"}
-            </div>
+            {roleBadge && (
+              <span className="badge badge-role">
+                {roleBadge}
+              </span>
+            )}
           </div>
-          <span className="text-muted">›</span>
+
+          <div className="trip-notes">
+            {trip.startDate ?? "No start date"} → {trip.endDate ?? "No end date"}
+          </div>
         </div>
+
+        <span className="chev">›</span>
       </div>
     );
   }
@@ -105,15 +110,15 @@ export default function MyTrips({ loggedInUser }) {
 
   return (
     <div className="container py-4" style={{ maxWidth: 980 }}>
-      <div className="d-flex align-items-start justify-content-between mb-3 gap-3">
+      <div className="d-flex align-items-start justify-content-between mb-3 gap-3 flex-wrap">
         <div>
-          <h2 className="mb-1">{pageTitle}</h2>
-          <small className="text-muted">{pageSubtitle}</small>
+          <h2 className="page-title mb-1">{pageTitle}</h2>
+          <div className="page-subtitle">{pageSubtitle}</div>
 
           {/* Tabs */}
-          <div className="mt-3 d-flex gap-2">
+          <div className="segmented mt-3">
             <button
-              className={`btn btn-sm ${view === "mine" ? "btn-primary" : "btn-outline-primary"}`}
+              className={`seg-btn ${view === "mine" ? "active" : ""}`}
               type="button"
               onClick={() => setView("mine")}
             >
@@ -121,18 +126,17 @@ export default function MyTrips({ loggedInUser }) {
             </button>
 
             <button
-              className={`btn btn-sm ${view === "invited" ? "btn-primary" : "btn-outline-primary"}`}
+              className={`seg-btn ${view === "invited" ? "active" : ""}`}
               type="button"
               onClick={() => setView("invited")}
             >
-              Trips I'm invited to
+              Invited
             </button>
           </div>
         </div>
 
-        {/* Only show create on "mine" */}
         {view === "mine" && (
-          <button className="btn btn-primary" onClick={() => navigate("/trips/add")}>
+          <button className="btn btn-primary-action" onClick={() => navigate("/trips/add")}>
             + Create Trip
           </button>
         )}
@@ -145,10 +149,10 @@ export default function MyTrips({ loggedInUser }) {
       ) : (
         <>
           {/* Upcoming */}
-          <div className="card shadow-sm rounded-3 mb-4">
-            <div className="card-header bg-white d-flex justify-content-between align-items-center">
+          <div className="card card-soft mb-4">
+            <div className="card-header card-header-soft d-flex justify-content-between align-items-center">
               <div className="fw-semibold">Upcoming Trips</div>
-              <span className="badge text-bg-secondary">{upcoming.length}</span>
+              <span className="badge badge-count">{upcoming.length}</span>
             </div>
 
             <div className="card-body">
@@ -157,16 +161,20 @@ export default function MyTrips({ loggedInUser }) {
                   {view === "mine" ? "No upcoming trips yet." : "No upcoming invited trips."}
                 </div>
               ) : (
-                upcoming.map(t => <TripCard key={`${view}-up-${t.tripId}`} trip={t} />)
+                <div className="d-flex flex-column gap-2">
+                  {upcoming.map((t) => (
+                    <TripCard key={`${view}-up-${t.tripId}`} trip={t} />
+                  ))}
+                </div>
               )}
             </div>
           </div>
 
           {/* Past */}
-          <div className="card shadow-sm rounded-3">
-            <div className="card-header bg-white d-flex justify-content-between align-items-center">
+          <div className="card card-soft">
+            <div className="card-header card-header-soft d-flex justify-content-between align-items-center">
               <div className="fw-semibold">Past Trips</div>
-              <span className="badge text-bg-secondary">{past.length}</span>
+              <span className="badge badge-count">{past.length}</span>
             </div>
 
             <div className="card-body">
@@ -175,7 +183,11 @@ export default function MyTrips({ loggedInUser }) {
                   {view === "mine" ? "No past trips yet." : "No past invited trips."}
                 </div>
               ) : (
-                past.map(t => <TripCard key={`${view}-past-${t.tripId}`} trip={t} />)
+                <div className="d-flex flex-column gap-2">
+                  {past.map((t) => (
+                    <TripCard key={`${view}-past-${t.tripId}`} trip={t} />
+                  ))}
+                </div>
               )}
             </div>
           </div>

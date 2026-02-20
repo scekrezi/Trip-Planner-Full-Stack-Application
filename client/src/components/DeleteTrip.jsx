@@ -19,9 +19,8 @@ export default function DeleteTrip({ loggedInUser }) {
     setIsLoading(true);
     setError("");
 
-
     fetch(`http://localhost:8080/api/trips/${tripId}/details`, {
-      headers: { authorization: loggedInUser.diyJwt }
+      headers: { authorization: loggedInUser.diyJwt },
     })
       .then(async (res) => {
         if (res.status === 401) {
@@ -56,13 +55,10 @@ export default function DeleteTrip({ loggedInUser }) {
 
     fetch(`http://localhost:8080/api/trips/${tripId}`, {
       method: "DELETE",
-      headers: {
-        authorization: loggedInUser.diyJwt
-      }
+      headers: { authorization: loggedInUser.diyJwt },
     })
       .then(async (res) => {
         if (res.status === 204) {
-    
           navigate("/trips/myTrips");
           return;
         }
@@ -90,44 +86,64 @@ export default function DeleteTrip({ loggedInUser }) {
   }
 
   return (
-    <div className="container py-4" style={{ maxWidth: 820 }}>
-      <div className="mb-3">
-        <h2 className="mb-0">Delete Trip</h2>
-        <small className="text-muted">This will delete all days and activities for this trip.</small>
-      </div>
+  <div className="container py-5" style={{ maxWidth: 760 }}>
+    {error && <div className="alert alert-danger">{error}</div>}
 
-      {error && <div className="alert alert-danger">{error}</div>}
+    {isLoading ? (
+      <div className="text-muted">Loading...</div>
+    ) : (
+      <div className="card card-soft">
+        <div className="card-body p-4">
 
-      {isLoading ? (
-        <div className="text-muted">Loading...</div>
-      ) : (
-        <div className="card shadow-sm rounded-3">
-          <div className="card-body">
-            <div className="mb-3">
-              <div className="fw-semibold">Are you sure you want to delete this trip?</div>
+          <div className="d-flex align-items-start gap-3 mb-3">
+            <div className="danger-dot">!</div>
+
+            <div className="flex-grow-1">
+              <div className="fw-semibold mb-2" style={{ fontSize: "1.1rem" }}>
+                Are you sure you want to delete this trip?
+              </div>
+
               {trip && (
-                <div className="text-muted mt-1">
-                  <div>
-                    <span className="fw-semibold">{trip.city}</span>, {trip.country}
+                <div className="text-muted mb-2">
+                  <div className="fw-semibold" style={{ color: "var(--text)" }}>
+                    {trip.city}, {trip.country}
                   </div>
                   <div className="small">
                     {trip.startDate ?? "No start"} → {trip.endDate ?? "No end"}
                   </div>
                 </div>
               )}
-            </div>
 
-            <div className="d-flex justify-content-end gap-2">
-              <button className="btn btn-outline-secondary" type="button" onClick={handleCancel} disabled={isDeleting}>
-                Cancel
-              </button>
-              <button className="btn btn-danger" type="button" onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting ? "Deleting..." : "Delete"}
-              </button>
+              <div className="form-text">
+                This action can’t be undone.
+              </div>
             </div>
           </div>
+
+          <div className="d-flex justify-content-end gap-2 mt-3">
+            <button
+              className="btn btn-ghost-outline"
+              type="button"
+              onClick={handleCancel}
+              disabled={isDeleting}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="btn btn-danger-soft"
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
+
 }

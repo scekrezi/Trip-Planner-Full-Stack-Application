@@ -8,6 +8,7 @@ import TripsForm from "./TripsForm";
 import DeleteTrip from "./DeleteTrip";
 import { useEffect, useState } from "react"
 import TripDetails from "./TripDetails";
+import Home from "./Home";
 
 function AppRouter() {
     const [loggedInUser, setLoggedInUser] = useState(JSON.parse(localStorage.getItem("loggedInUser")))
@@ -19,7 +20,7 @@ function AppRouter() {
             children: [
                 {
                     path: "",
-                    element: <div>Welcome to the trip planner</div>
+  element: <Home loggedInUser={loggedInUser} />
                 },
                 {
                     path: "/users/add",

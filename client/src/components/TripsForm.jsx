@@ -70,7 +70,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   const [openDayIndex, setOpenDayIndex] = useState(0);
   const [openActivity, setOpenActivity] = useState({ dayIndex: -1, activityIndex: -1 });
 
-
   const [members, setMembers] = useState([]);
   const [membersLoaded, setMembersLoaded] = useState(false);
   const [permissionError, setPermissionError] = useState(null);
@@ -100,14 +99,12 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
     })
       .then(async (res) => {
         if (res.status === 401) {
-        
           setLoggedInUser?.(null);
           localStorage.removeItem("loggedInUser");
           navigate("/login");
           return [];
         }
         if (res.status === 403) {
-          
           return [];
         }
         if (!res.ok) {
@@ -118,13 +115,11 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
       })
       .then((data) => setMembers(Array.isArray(data) ? data : []))
       .catch((e) => {
-      
         setPermissionError(e.message);
         setMembers([]);
       })
       .finally(() => setMembersLoaded(true));
   }
-
 
   useEffect(() => {
     if (tripId !== undefined) return;
@@ -145,7 +140,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
     }
   }, [tripId, templateTrip]);
 
-
   useEffect(() => {
     if (tripId === undefined) return;
 
@@ -161,7 +155,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
         if (res.status >= 200 && res.status < 300) {
           return res.json();
         } else if (res.status === 401) {
-      
           setLoggedInUser?.(null);
           localStorage.removeItem("loggedInUser");
           navigate("/login");
@@ -185,13 +178,10 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
         setTrip(data);
         setOpenDayIndex(data.days.length ? 0 : -1);
 
-      
         refreshMembers(tripId);
       })
       .catch((e) => setPermissionError(e.message));
- 
   }, [tripId, loggedInUser?.diyJwt, navigate]);
-
 
   const ownerId = trip?.owner?.userId ?? trip?.owner?.id;
   const isOwner = !!(isLoggedIn && loggedInId && ownerId && loggedInId === ownerId);
@@ -205,10 +195,9 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
   const canEditTrip = !!(tripId ? (isOwner || isEditor) : true);
 
-
   useEffect(() => {
     if (!tripId) return;
-    if (!isLoggedIn) return; 
+    if (!isLoggedIn) return;
     if (!membersLoaded) return;
     if (!canEditTrip) {
       setPermissionError("View-only: you don’t have permission to edit this trip.");
@@ -379,7 +368,6 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
       return;
     }
 
-   
     if (tripId && !canEditTrip) {
       setErrors(["View-only: you don’t have permission to edit this trip."]);
       return;
@@ -440,16 +428,16 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
   return (
     <div className="container py-4" style={{ maxWidth: 980 }}>
       <div className="mb-3">
-        <h2 className="mb-0">
+        <h2 className="page-title mb-1">
           {tripId ? "Edit Trip" : templateTrip ? "Create Trip from Template" : "Create Trip"}
         </h2>
-        <small className="text-muted">
+        <div className="page-subtitle">
           {tripId
             ? "Update your itinerary and save changes."
             : templateTrip
             ? "Pick dates, review the itinerary, then save your own copy."
             : "Add days and activities, then save everything at once."}
-        </small>
+        </div>
       </div>
 
       {errors.length > 0 && (
@@ -465,35 +453,45 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
       <form onSubmit={handleSubmit}>
         {/* Trip Details */}
-        <div className="card shadow-sm rounded-3 mb-4">
-          <div className="card-header bg-white">
+        <div className="card card-soft mb-4">
+          <div className="card-header card-header-soft">
             <div className="fw-semibold">Trip Details</div>
           </div>
+
           <div className="card-body">
             <div className="row g-3">
               <div className="col-md-6">
-                <label className="form-label">Country *</label>
-                <input className="form-control" name="country" value={trip.country} onChange={handleTripChange} />
+                <label className="form-label">
+                  Country <span className="required">*</span>
+                </label>
+                <input className="form-control" name="country" value={trip.country} onChange={handleTripChange} required/>
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">City *</label>
-                <input className="form-control" name="city" value={trip.city} onChange={handleTripChange} />
+                <label className="form-label">
+                  City <span className="required">*</span>
+                </label>
+                <input className="form-control" name="city" value={trip.city} onChange={handleTripChange} required/>
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">Start Date *</label>
+                <label className="form-label">
+                  Start Date <span className="required">*</span>
+                </label>
                 <input
                   className="form-control"
                   type="date"
                   name="startDate"
                   value={trip.startDate ?? ""}
                   onChange={handleTripChange}
+                  required
                 />
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">End Date *</label>
+                <label className="form-label">
+                  End Date <span className="required">*</span>
+                </label>
                 <input
                   className="form-control"
                   type="date"
@@ -521,12 +519,12 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
         {/* Itinerary */}
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <h5 className="mb-0">Itinerary</h5>
+          <h5 className="mb-0 fw-semibold">Itinerary</h5>
           <small className="text-muted">{trip.days.length} day(s)</small>
         </div>
 
         {trip.days.length === 0 && (
-          <div className="text-muted border rounded p-4 mb-4">
+          <div className="empty-soft mb-4">
             No days yet. Click <span className="fw-semibold">Add Day</span> below to start building your itinerary.
           </div>
         )}
@@ -535,8 +533,8 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
           const isOpen = openDayIndex === dayIndex;
 
           return (
-            <div className="card shadow-sm rounded-3 mb-3" key={day.tripDayId || `day-${dayIndex}`}>
-              <div className="card-header bg-white d-flex justify-content-between align-items-center">
+            <div className="card card-soft mb-3" key={day.tripDayId || `day-${dayIndex}`}>
+              <div className="card-header card-header-soft d-flex justify-content-between align-items-center">
                 <button type="button" className="btn btn-link text-decoration-none p-0" onClick={() => toggleDay(dayIndex)}>
                   <span className="fw-semibold">
                     Day {dayIndex + 1}
@@ -545,7 +543,7 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                   <span className="ms-2 text-muted">{isOpen ? "▲" : "▼"}</span>
                 </button>
 
-                <button className="btn btn-sm btn-outline-danger" type="button" onClick={() => removeDay(dayIndex)}>
+                <button className="btn btn-sm btn-danger-soft" type="button" onClick={() => removeDay(dayIndex)}>
                   Remove Day
                 </button>
               </div>
@@ -554,7 +552,9 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                 <div className="card-body">
                   <div className="row g-3 align-items-end">
                     <div className="col-md-4">
-                      <label className="form-label">Day Date *</label>
+                      <label className="form-label">
+                        Day Date <span className="required">*</span>
+                      </label>
                       <input
                         className="form-control"
                         type="date"
@@ -580,13 +580,13 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
 
                   <div className="d-flex justify-content-between align-items-center mt-3">
                     <div className="fw-semibold">Activities</div>
-                    <button className="btn btn-sm btn-primary" type="button" onClick={() => addActivity(dayIndex)}>
+                    <button className="btn btn-sm btn-template" type="button" onClick={() => addActivity(dayIndex)}>
                       + Add Activity
                     </button>
                   </div>
 
                   {day.activities.length === 0 && (
-                    <div className="text-muted border rounded p-3 mt-3">
+                    <div className="empty-soft mt-3">
                       No activities yet. Click <span className="fw-semibold">Add Activity</span>.
                     </div>
                   )}
@@ -596,7 +596,7 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                       const aOpen = openActivity.dayIndex === dayIndex && openActivity.activityIndex === activityIndex;
 
                       return (
-                        <div className="border rounded" key={a.activityId || `a-${dayIndex}-${activityIndex}`}>
+                        <div className="activity-shell" key={a.activityId || `a-${dayIndex}-${activityIndex}`}>
                           <div className="d-flex justify-content-between align-items-center p-2">
                             <button
                               type="button"
@@ -611,7 +611,7 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                             </button>
 
                             <button
-                              className="btn btn-sm btn-outline-danger"
+                              className="btn btn-sm btn-danger-soft"
                               type="button"
                               onClick={() => removeActivity(dayIndex, activityIndex)}
                             >
@@ -623,7 +623,9 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                             <div className="p-3 border-top">
                               <div className="row g-3">
                                 <div className="col-md-6">
-                                  <label className="form-label">Title *</label>
+                                  <label className="form-label">
+                                    Title <span className="required">*</span>
+                                  </label>
                                   <input
                                     className="form-control"
                                     name="title"
@@ -683,7 +685,7 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                   </div>
 
                   <div className="mt-3">
-                    <button className="btn btn-outline-primary" type="button" onClick={addDay}>
+                    <button className="btn btn-ghost-outline" type="button" onClick={addDay}>
                       + Add Another Day
                     </button>
                   </div>
@@ -693,9 +695,10 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
           );
         })}
 
-        <div className="position-sticky bottom-0 bg-white border-top py-3 mt-4" style={{ zIndex: 10 }}>
+        {/* Sticky footer actions (same behavior, nicer look) */}
+        <div className="form-footer mt-4" style={{ zIndex: 10 }}>
           <div className="d-flex justify-content-between align-items-center">
-            <button className="btn btn-primary" type="button" onClick={addDay}>
+            <button className="btn btn-ghost-outline" type="button" onClick={addDay}>
               + Add Day
             </button>
 
@@ -704,7 +707,7 @@ export default function TripsForm({ loggedInUser, setLoggedInUser }) {
                 Cancel
               </button>
 
-              <button className="btn btn-success" type="submit" disabled={isSaving}>
+              <button className="btn btn-primary-action" type="submit" disabled={isSaving}>
                 {isSaving ? "Saving..." : tripId ? "Save Changes" : "Save Trip"}
               </button>
             </div>

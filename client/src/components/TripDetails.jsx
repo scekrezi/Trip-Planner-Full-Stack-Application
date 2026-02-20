@@ -151,16 +151,13 @@ export default function TripDetails({ loggedInUser }) {
       .then((data) => {
         if (!data) return;
         setTrip(data);
-
-       
         refreshMembers();
       })
       .catch((err) => setError(err.message));
-
   }, [tripId, loggedInUser?.diyJwt, navigate]);
 
   if (error) return <div className="alert alert-danger">{error}</div>;
-  if (!trip) return <div>Loading trip...</div>;
+  if (!trip) return <div className="container py-4" style={{ maxWidth: 980 }}>Loading trip...</div>;
 
   const isTemplate = !!(trip?.isTemplate ?? trip?.template ?? trip?.is_template);
 
@@ -170,244 +167,224 @@ export default function TripDetails({ loggedInUser }) {
 
   const canManageMembers = isLoggedIn && !isTemplate && isOwner;
 
-
   const myMember = members.find((m) => {
     const memberUserId = m?.user?.userId ?? m?.user?.id;
     return memberUserId && loggedInUserId && memberUserId === loggedInUserId;
   });
 
-  const myRole = (myMember?.role ?? "").toUpperCase(); 
+  const myRole = (myMember?.role ?? "").toUpperCase();
   const isEditor = isLoggedIn && myRole === "EDITOR";
 
-
   const canEditTrip = isLoggedIn && !isTemplate && (isOwner || isEditor);
-
 
   const showViewOnly = isLoggedIn && !isTemplate && membersLoaded && !canEditTrip;
 
   return (
     <div className="container py-4" style={{ maxWidth: 980 }}>
-      <div className="d-flex justify-content-between align-items-start gap-3">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
         <div>
-          <h2 className="mb-1">
+          <h2 className="page-title mb-1">
             {trip.city}, {trip.country}
           </h2>
 
-          {(trip.startDate || trip.endDate) && (
-            <div className="text-muted">
+          {!isTemplate && (trip.startDate || trip.endDate) && (
+            <div className="page-subtitle">
               {trip.startDate ?? "?"} → {trip.endDate ?? "?"}
             </div>
           )}
 
           {isTemplate && (
-            <div className="mt-2 d-flex gap-2 align-items-center flex-wrap">
-              <span className="badge text-bg-secondary">Template</span>
-
-              {isLoggedIn && (
-                <button
-                  className="btn btn-sm btn-primary"
-                  type="button"
-                  onClick={handleUseTemplate}
-                >
-                  Use this template
-                </button>
-              )}
+            <div className="mt-2">
+              <span className="badge badge-template">Template</span>
             </div>
           )}
         </div>
 
-        {canEditTrip ? (
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-primary"
-              type="button"
-              onClick={() => navigate(`/trips/edit/${tripId}`)}
-            >
-              Edit
+        <div className="d-flex align-items-center gap-2">
+          {isTemplate && isLoggedIn && (
+            <button className="btn btn-template" type="button" onClick={handleUseTemplate}>
+              Use this template
             </button>
+          )}
 
-            {/* Only owner can delete */}
-            {isOwner && (
+          {!isTemplate && canEditTrip && (
+            <>
               <button
-                className="btn btn-outline-danger"
+                className="btn btn-ghost-outline btn-sm"
                 type="button"
-                onClick={() => navigate(`/trips/${tripId}/delete`)}
+                onClick={() => navigate(`/trips/edit/${tripId}`)}
               >
-                Delete
+                Edit
               </button>
-            )}
-          </div>
-        ) : showViewOnly ? (
-          <div className="d-flex align-items-center">
-            <span className="badge text-bg-secondary">View only</span>
-          </div>
-        ) : null}
+
+              {isOwner && (
+                <button
+                  className="btn btn-danger-soft btn-sm"
+                  type="button"
+                  onClick={() => navigate(`/trips/${tripId}/delete`)}
+                >
+                  Delete
+                </button>
+              )}
+            </>
+          )}
+
+          {!isTemplate && showViewOnly && (
+            <span className="badge badge-template">View only</span>
+          )}
+        </div>
       </div>
 
+      {/* Notes */}
       {trip.notes && (
-        <div className="mt-3">
-          <div className="card shadow-sm rounded-3">
-            <div className="card-body">
-              <div className="fw-semibold mb-1">Notes</div>
-              <div>{trip.notes}</div>
-            </div>
-          </div>
+        <div className="card card-soft mb-4">
+          <div className="card-header card-header-soft fw-semibold">Notes</div>
+          <div className="card-body">{trip.notes}</div>
         </div>
       )}
 
       {/* Collaborators */}
-      <hr className="my-4" />
+      <div className="card card-soft mb-4">
+        <div className="card-header card-header-soft d-flex justify-content-between align-items-center">
+          <div className="fw-semibold">Collaborators</div>
 
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <h3 className="mb-0">Collaborators</h3>
+          {canManageMembers && (
+            <button
+              className="btn btn-ghost-outline btn-sm"
+              type="button"
+              onClick={() => {
+                setShowAddMember((v) => !v);
+                setAddMemberError(null);
+                setAddMemberSuccess(null);
+              }}
+            >
+              {showAddMember ? "Close" : "Add collaborator"}
+            </button>
+          )}
+        </div>
 
-        {canManageMembers && (
-          <button
-            className="btn btn-sm btn-outline-primary"
-            type="button"
-            onClick={() => {
-              setShowAddMember((v) => !v);
-              setAddMemberError(null);
-              setAddMemberSuccess(null);
-            }}
-          >
-            {showAddMember ? "Close" : "Add collaborator"}
-          </button>
-        )}
+        <div className="card-body">
+          {!isLoggedIn ? (
+            <div className="text-muted">Log in to view collaborators.</div>
+          ) : (
+            <>
+              {membersError && <div className="alert alert-danger">{membersError}</div>}
+
+              {showAddMember && canManageMembers && (
+                <form onSubmit={handleAddMember} className="mb-3">
+                  {addMemberError && <div className="alert alert-danger">{addMemberError}</div>}
+                  {addMemberSuccess && <div className="alert alert-success">{addMemberSuccess}</div>}
+
+                  <div className="row g-2 align-items-end">
+                    <div className="col-md-7">
+                      <label className="form-label">Collaborator email</label>
+                      <input
+                        className="form-control"
+                        value={newMemberEmail}
+                        onChange={(e) => setNewMemberEmail(e.target.value)}
+                        placeholder="collab@travel.com"
+                      />
+                    </div>
+
+                    <div className="col-md-3">
+                      <label className="form-label">Role</label>
+                      <select
+                        className="form-select"
+                        value={newMemberRole}
+                        onChange={(e) => setNewMemberRole(e.target.value)}
+                      >
+                        <option value="VIEWER">VIEWER</option>
+                        <option value="EDITOR">EDITOR</option>
+                      </select>
+                    </div>
+
+                    <div className="col-md-2">
+                      <button className="btn btn-primary w-100" type="submit">
+                        Add
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-text mt-2">
+                    Owner can add collaborators as <strong>VIEWER</strong> or <strong>EDITOR</strong>.
+                  </div>
+                </form>
+              )}
+
+              {!members || members.length === 0 ? (
+                <div className="text-muted">
+                  No collaborators found (or you don’t have access).
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-2">
+                  {members.map((m, idx) => (
+                    <div
+                      key={m.user?.userId ?? m.user?.id ?? idx}
+                      className="trip-row d-flex justify-content-between align-items-center"
+                    >
+                      <div>
+                        <div className="trip-title">{m.user?.email ?? "Unknown"}</div>
+                        <div className="trip-notes">{m.role ?? "?"}</div>
+                      </div>
+                      <span className="badge badge-role">{m.role ?? "?"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
-      {!isLoggedIn ? (
-        <div className="text-muted">Log in to view collaborators.</div>
-      ) : (
-        <div className="card shadow-sm rounded-3 mb-3">
-          <div className="card-body">
-            {membersError && (
-              <div className="alert alert-danger">{membersError}</div>
-            )}
-
-            {showAddMember && canManageMembers && (
-              <form onSubmit={handleAddMember} className="mb-3">
-                {addMemberError && (
-                  <div className="alert alert-danger">{addMemberError}</div>
-                )}
-                {addMemberSuccess && (
-                  <div className="alert alert-success">{addMemberSuccess}</div>
-                )}
-
-                <div className="row g-2 align-items-end">
-                  <div className="col-md-7">
-                    <label className="form-label">Collaborator email</label>
-                    <input
-                      className="form-control"
-                      value={newMemberEmail}
-                      onChange={(e) => setNewMemberEmail(e.target.value)}
-                      placeholder="collab@travel.com"
-                    />
-                  </div>
-
-                  <div className="col-md-3">
-                    <label className="form-label">Role</label>
-                    <select
-                      className="form-select"
-                      value={newMemberRole}
-                      onChange={(e) => setNewMemberRole(e.target.value)}
-                    >
-                      <option value="VIEWER">VIEWER</option>
-                      <option value="EDITOR">EDITOR</option>
-                    </select>
-                  </div>
-
-                  <div className="col-md-2">
-                    <button className="btn btn-primary w-100" type="submit">
-                      Add
-                    </button>
-                  </div>
-                </div>
-
-                <div className="form-text mt-2">
-                  Owner can add collaborators as <strong>VIEWER</strong> or{" "}
-                  <strong>EDITOR</strong>.
-                </div>
-              </form>
-            )}
-
-            {!members || members.length === 0 ? (
-              <div className="text-muted">
-                No collaborators found (or you don’t have access).
-              </div>
-            ) : (
-              <ul className="list-group">
-                {members.map((m, idx) => (
-                  <li
-                    key={m.user?.userId ?? m.user?.id ?? idx}
-                    className="list-group-item d-flex justify-content-between align-items-start"
-                  >
-                    <div>
-                      <div className="fw-semibold">
-                        Collaborator: {m.user?.email ?? "Unknown"}
-                      </div>
-
-                      <div className="text-muted small">
-                        Role: {m.role ?? "?"}
-                      </div>
-                    </div>
-                    <span className="badge text-bg-secondary">
-                      {m.role ?? "?"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Itinerary */}
-      <hr className="my-4" />
-      <h3 className="mb-3">Itinerary</h3>
+      <div className="card card-soft">
+        <div className="card-header card-header-soft fw-semibold">Itinerary</div>
+        <div className="card-body">
+          {!trip.days || trip.days.length === 0 ? (
+            <div className="text-muted">No days yet.</div>
+          ) : (
+            trip.days.map((day) => (
+              <div key={day.tripDayId} className="card shadow-sm rounded-3 mb-3">
+                <div className="card-body">
+                  <h5 className="card-title mb-1">{day.dayDate}</h5>
+                  {day.dayNotes && (
+                    <p className="card-text text-muted mb-3">{day.dayNotes}</p>
+                  )}
 
-      {!trip.days || trip.days.length === 0 ? (
-        <div className="text-muted">No days yet.</div>
-      ) : (
-        trip.days.map((day) => (
-          <div key={day.tripDayId} className="card shadow-sm rounded-3 mb-3">
-            <div className="card-body">
-              <h5 className="card-title mb-1">{day.dayDate}</h5>
-              {day.dayNotes && (
-                <p className="card-text text-muted mb-3">{day.dayNotes}</p>
-              )}
+                  <h6 className="mb-2">Activities</h6>
 
-              <h6 className="mb-2">Activities</h6>
+                  {!day.activities || day.activities.length === 0 ? (
+                    <div className="text-muted">No activities for this day.</div>
+                  ) : (
+                    <ul className="list-group">
+                      {day.activities.map((a) => (
+                        <li key={a.activityId} className="list-group-item">
+                          <div className="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                              <div className="fw-semibold">{a.title}</div>
+                              {a.location && <div>{a.location}</div>}
+                              {a.description && (
+                                <div className="text-muted">{a.description}</div>
+                              )}
+                            </div>
 
-              {!day.activities || day.activities.length === 0 ? (
-                <div className="text-muted">No activities for this day.</div>
-              ) : (
-                <ul className="list-group">
-                  {day.activities.map((a) => (
-                    <li key={a.activityId} className="list-group-item">
-                      <div className="d-flex justify-content-between align-items-start gap-3">
-                        <div>
-                          <div className="fw-semibold">{a.title}</div>
-                          {a.location && <div>{a.location}</div>}
-                          {a.description && (
-                            <div className="text-muted">{a.description}</div>
-                          )}
-                        </div>
-
-                        <div className="text-muted text-nowrap">
-                          {a.startTime ?? ""}
-                          {a.startTime && a.endTime ? " - " : ""}
-                          {a.endTime ?? ""}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        ))
-      )}
+                            <div className="text-muted text-nowrap">
+                              {a.startTime ?? ""}
+                              {a.startTime && a.endTime ? " - " : ""}
+                              {a.endTime ?? ""}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
