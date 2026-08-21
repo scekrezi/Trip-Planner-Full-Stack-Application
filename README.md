@@ -167,4 +167,4 @@ This project strengthened my experience with:
 Full Stack Developer with experience in Java, Spring Boot, Angular, .NET, REST APIs, SQL, Azure, and modern software development practices.
 
 * GitHub: [scekrezi](https://github.com/scekrezi)
-* LinkedIn: (https://linkedin/in/sindicekrezi)
+* LinkedIn: (https://linkedin.com/in/sindicekrezi)
